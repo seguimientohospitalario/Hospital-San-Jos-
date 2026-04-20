@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Verificación de Paciente - Hospital San José</title>
+    <title>Verificaci&#243;n de Paciente - Hospital San Jos&#233;</title>
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/registro-pacientes.css">
     <link rel="stylesheet" href="../../css/verificacion-paciente.css">
@@ -13,24 +13,24 @@
 <body>
     <div class="main-wrapper">
         <main class="page-content" id="page-content">
-            
-            <!-- SECCIÓN DE FILTROS -->
-            <div class="search-filters-container">
+
+            <!-- SECCION DE FILTROS -->
+            <div class="search-filters-container" id="search-filters">
                 <div class="filter-group">
                     <label>DNI</label>
                     <input type="text" id="filter-dni" class="filter-input" placeholder="Buscar DNI..." maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                 </div>
                 <div class="filter-group">
-                    <label>Historia Clínica</label>
-                    <input type="text" id="filter-hc" class="filter-input" placeholder="Buscar Nº HC..." oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                    <label>Historia Cl&#237;nica</label>
+                    <input type="text" id="filter-hc" class="filter-input" placeholder="Buscar N&#186; HC..." oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                 </div>
                 <div class="filter-group">
                     <label>Apellidos</label>
-                    <input type="text" id="filter-apellidos" class="filter-input" placeholder="Buscar por apellidos..." oninput="this.value = this.value.replace(/[^A-Za-zñÑáéíóúÁÉÍÓÚ\s]/g, '')">
+                    <input type="text" id="filter-apellidos" class="filter-input" placeholder="Buscar por apellidos...">
                 </div>
                 <div class="filter-group">
                     <label>Nombres</label>
-                    <input type="text" id="filter-nombres" class="filter-input" placeholder="Buscar por nombres..." oninput="this.value = this.value.replace(/[^A-Za-zñÑáéíóúÁÉÍÓÚ\s]/g, '')">
+                    <input type="text" id="filter-nombres" class="filter-input" placeholder="Buscar por nombres...">
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button class="btn-module primary" id="btn-search" style="padding: 10px 20px;"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
@@ -45,78 +45,98 @@
                         <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem;"></i>
                         <p style="margin-top: 10px; font-weight: 500;">Buscando paciente...</p>
                     </div>
-
                     <table class="data-table" id="table-pacientes" style="display: none;">
                         <thead>
                             <tr>
                                 <th>DNI</th>
                                 <th>Paciente</th>
-                                <th>Nº Historia</th>
+                                <th>N&#186; Historia</th>
                                 <th>Tipo de Seguro</th>
                                 <th>Servicio</th>
-                                <th>Condición</th>
-                                <th style="text-align: center; width: 60px;">Acción</th>
+                                <th>Condici&#243;n</th>
+                                <th style="text-align: center; width: 80px;">Acci&#243;n</th>
                             </tr>
                         </thead>
-                        <tbody id="tbody-pacientes">
-                            <!-- Los resultados se generan en JS -->
-                        </tbody>
+                        <tbody id="tbody-pacientes"></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- SECCIÓN DE CALENDARIO (OCULTA POR DEFECTO) -->
-            <div id="view-calendario" style="display: none; margin-top: 30px;">
+            <!-- SECCION DE TIMELINE (OCULTA POR DEFECTO) -->
+            <div id="view-timeline" style="display: none; margin-top: 20px;">
+                <!-- Banner del paciente -->
                 <div class="patient-info-banner">
                     <div class="banner-details">
-                        <h4 id="banner-paciente-nombre">PACIENTE: APELLIDOS, NOMBRES</h4>
-                        <p id="banner-paciente-info">DNI: 00000000 | HC: 000000 | SERVICIO: MEDICINA</p>
+                        <h4 id="banner-paciente-nombre">PACIENTE</h4>
+                        <p id="banner-paciente-info">DNI | HC | SERVICIO</p>
                     </div>
-                    <button class="btn-module" id="btn-back-to-list" style="background: #f1f5f9; color: #64748b; padding: 8px 15px;">
-                        <i class="fa-solid fa-arrow-left"></i> Cambiar Paciente
-                    </button>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div id="banner-dias" class="dias-badge dias-activo" style="font-size: 14px; padding: 8px 16px;">0 d&#237;as</div>
+                        <div id="banner-condicion" class="condicion-badge cond-hospitalizado" style="font-size: 14px; padding: 8px 16px;">Hospitalizado</div>
+                        <button class="btn-module" id="btn-back-to-list" style="background: #f1f5f9; color: #64748b; padding: 8px 15px;">
+                            <i class="fa-solid fa-arrow-left"></i> Cambiar Paciente
+                        </button>
+                    </div>
                 </div>
 
-                <div class="calendar-container">
-                    <div class="calendar-header">
-                        <h3 style="color: #0f172a; font-weight: 700; font-size: 18px;">
-                            <i class="fa-solid fa-calendar-days" style="color: #3b82f6; margin-right: 10px;"></i>
-                            Seguimiento Diario de Hospitalización
-                        </h3>
-                        <div style="display: flex; align-items: center; gap: 10px;">
-                            <span style="font-size: 14px; color: #64748b; font-weight: 600;" id="current-month-year">ABRIL 2026</span>
+                <!-- Timeline -->
+                <div class="timeline-section">
+                    <div class="timeline-header">
+                        <h3><i class="fa-solid fa-timeline" style="color: #3b82f6; margin-right: 10px;"></i>L&#237;nea de Tiempo Cl&#237;nica</h3>
+                    </div>
+                    <div class="timeline-container" id="timeline-container">
+                        <p class="timeline-empty" id="timeline-empty">No hay eventos registrados para este paciente.</p>
+                    </div>
+                </div>
+
+                <!-- Formulario de nuevo evento -->
+                <div class="event-form-section">
+                    <h3 class="event-form-title"><i class="fa-solid fa-plus-circle" style="color: #3b82f6; margin-right: 10px;"></i>Registrar Nuevo Evento</h3>
+                    <form id="event-form" class="event-form">
+                        <div class="event-form-grid">
+                            <div class="input-stacked">
+                                <label>Tipo de Evento *</label>
+                                <select id="evento-tipo" class="standard-input" required>
+                                    <option value="" disabled selected hidden>Seleccione</option>
+                                    <option value="Hospitalizado">Hospitalizado</option>
+                                    <option value="Cambio Cobertura">Cambio Cobertura</option>
+                                    <option value="Alta">Alta</option>
+                                    <option value="Fallecido">Fallecido</option>
+                                </select>
+                            </div>
+                            <div class="input-stacked" id="grupo-nuevo-seguro" style="display: none;">
+                                <label>Nuevo Tipo de Seguro *</label>
+                                <select id="evento-nuevo-seguro" class="standard-input">
+                                    <option value="" disabled selected hidden>Seleccione</option>
+                                    <option value="EsSalud">EsSalud</option>
+                                    <option value="SIS">SIS</option>
+                                    <option value="Saludpol">Saludpol</option>
+                                    <option value="SOAT">SOAT</option>
+                                    <option value="Privado">Privado</option>
+                                    <option value="Otros">Otros</option>
+                                </select>
+                            </div>
+                            <div class="input-stacked" id="grupo-nuevo-seguro-otros" style="display: none;">
+                                <label>Especificar Seguro</label>
+                                <input type="text" id="evento-nuevo-seguro-otros" class="standard-input">
+                            </div>
+                            <div class="input-stacked" style="grid-column: 1 / -1;">
+                                <label>Detalle / Observaci&#243;n</label>
+                                <textarea id="evento-detalle" class="standard-input" rows="2" placeholder="Descripci&#243;n breve del evento..."></textarea>
+                            </div>
                         </div>
-                    </div>
-
-                    <p style="font-size: 13px; color: #64748b; margin-bottom: 20px;">
-                        Seleccione un día para actualizar el estado del paciente (Visual únicamente).
-                    </p>
-
-                    <div class="days-list" id="days-grid">
-                        <!-- Días generados por JS -->
-                    </div>
-
-                    <div id="status-update-panel" style="display: none; margin-top: 30px; padding-top: 20px; border-top: 1px solid #f1f5f9;">
-                        <h4 style="font-size: 14px; color: #1e293b; margin-bottom: 15px;" id="selected-day-label">Actualizar estado para el día 15:</h4>
-                        <div class="status-selector">
-                            <div class="status-option opt-hosp" data-status="Hospitalizado">
-                                <i class="fa-solid fa-bed"></i> Hospitalizado
-                            </div>
-                            <div class="status-option opt-cambio" data-status="Cambio Cobertura">
-                                <i class="fa-solid fa-shield-halved"></i> Cambio Cobertura
-                            </div>
-                            <div class="status-option opt-alta" data-status="Alta">
-                                <i class="fa-solid fa-house-medical-circle-check"></i> Salió de Alta
-                            </div>
-                            <div class="status-option opt-none" data-status="Ninguno">
-                                <i class="fa-solid fa-xmark"></i> Sin registro
-                            </div>
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="submit" class="btn-module primary" id="btn-registrar-evento" style="padding: 12px 25px;">
+                                <i class="fa-solid fa-save"></i>
+                                <span id="registrar-text">Registrar Evento</span>
+                                <i id="registrar-spinner" class="fa-solid fa-circle-notch fa-spin" style="display:none; margin-left:8px;"></i>
+                            </button>
                         </div>
-                    </div>
+                    </form>
                 </div>
             </div>
 
-            <!-- Notificación Toast -->
+            <!-- Toast -->
             <div id="toast" class="toast-success" style="display: none;">
                 <i class="fa-solid fa-check-circle" id="toast-icon"></i>
                 <span id="toast-text">Actualizado correctamente</span>

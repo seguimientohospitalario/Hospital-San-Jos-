@@ -15,13 +15,13 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const userBtnHTML = isHighAccess 
         ? `<a href="${bp}modulos/usuarios/gestion-user.html" class="${currentPage === 'gestion-user.html' ? 'selected' : ''}">Usuarios</a>`
-        : `<a href="#" class="blocked-link" onclick="event.preventDefault(); alert('Su nivel de acceso (Usuario) no le permite ingresar a este subm贸dulo administrativo.');">Usuarios</a>`;
+        : `<a href="#" class="blocked-link" onclick="event.preventDefault(); alert('Su nivel de acceso (Usuario) no le permite ingresar a este subm\u00F3dulo administrativo.');">Usuarios</a>`;
 
     const sidebarHTML = `
         <div class="sidebar-header">
             <img src="${bp}img/logotipo_transparent.png" alt="Logo MINSA" class="sidebar-logo">
             <div class="sidebar-header-text">
-                <h2>Hospital San Jos茅</h2>
+                <h2>Hospital San Jos\u00E9</h2>
                 <p>Unidad de Seguros (SIS)</p>
             </div>
         </div>
@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="nav-item has-sub ${['gestion-admin.html', 'gestion-user.html'].includes(currentPage) ? 'active' : ''}">
                 <div class="nav-link">
                     <i class="fa-solid fa-users"></i>
-                    <span>Gesti贸n de Usuarios</span>
+                    <span>Gesti\u00F3n de Usuarios</span>
                 </div>
                 <div class="sub-menu">
                     ${adminBtnHTML}
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
             <div class="nav-item ${currentPage === 'tramite.html' ? 'active' : ''}">
                 <a href="${bp}modulos/tramite/tramite.html" class="nav-link">
                     <i class="fa-solid fa-file-signature"></i>
-                    <span>Tr谩mite Documentario</span>
+                    <span>Tr\u00E1mite Documentario</span>
                 </a>
             </div>
 
@@ -65,8 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     <span>Seguimiento Pacientes Hospitalizados</span>
                 </div>
                 <div class="sub-menu">
-                    <a href="${bp}modulos/seguimiento/seguimiento-pacientes.html" class="${currentPage === 'seguimiento-pacientes.html' ? 'selected' : ''}">B煤squeda Pacientes</a>
-                    <a href="${bp}modulos/seguimiento/verificacion-paciente.html" class="${currentPage === 'verificacion-paciente.html' ? 'selected' : ''}">Verificaci贸n - Actualizaci贸n</a>
+                    <a href="${bp}modulos/seguimiento/seguimiento-pacientes.html" class="${currentPage === 'seguimiento-pacientes.html' ? 'selected' : ''}">B\u00FAsqueda Pacientes</a>
+                    <a href="${bp}modulos/seguimiento/verificacion-paciente.html" class="${currentPage === 'verificacion-paciente.html' ? 'selected' : ''}">Verificaci\u00F3n - Actualizaci\u00F3n</a>
                 </div>
             </div>
 
@@ -80,7 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="sidebar-footer">
             <button class="logout-btn" id="sidebar-logout-btn">
                 <i class="fa-solid fa-arrow-right-from-bracket"></i>
-                <span class="logout-text">Cerrar Sesi贸n</span>
+                <span class="logout-text">Cerrar Sesi\u00F3n</span>
             </button>
         </div>
     `;
@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </button>
                 <div class="dropdown-menu" id="dropdown-menu" style="right: 10px; top: calc(100% + 10px);">
                     <a href="#"><i class="fa-solid fa-user-pen"></i> Editar Perfil</a>
-                    <a href="#" id="global-logout-btn" class="logout"><i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesi贸n</a>
+                    <a href="#" id="global-logout-btn" class="logout"><i class="fa-solid fa-arrow-right-from-bracket"></i> Cerrar Sesi\u00F3n</a>
                 </div>
             </div>
         </div>
@@ -202,18 +202,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // OFFLINE HANDLING
 window.addEventListener('offline', () => {
-    const offlineDiv = document.createElement('div');
-    offlineDiv.id = 'global-offline-banner';
-    offlineDiv.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; background: #ef4444; color: white; text-align: center; padding: 10px; font-weight: 600; z-index: 9999; box-shadow: 0 4px 6px rgba(0,0,0,0.1); font-size: 14px;';
-    offlineDiv.innerHTML = '<i class="fa-solid fa-wifi" style="margin-right: 8px;"></i> Est醩 sin conexi髇 a internet. Los cambios no se guardar醤.';
-    document.body.appendChild(offlineDiv);
+    let offlineDiv = document.getElementById('global-offline-banner');
+    if (!offlineDiv) {
+        offlineDiv = document.createElement('div');
+        offlineDiv.id = 'global-offline-banner';
+        document.body.appendChild(offlineDiv);
+    }
+    offlineDiv.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(255,255,255,0.8); backdrop-filter: blur(5px); z-index: 99999; display: flex; align-items: center; justify-content: center;';
+    offlineDiv.innerHTML = '<div style="background: #ef4444; color: white; padding: 20px 40px; border-radius: 8px; font-size: 18px; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.2);"><i class="fa-solid fa-wifi" style="margin-right: 12px;"></i> Est\u00E1s sin conexi\u00F3n a internet. Reconectando...</div>';
+    document.body.style.overflow = 'hidden';
 });
 
 window.addEventListener('online', () => {
     const offlineDiv = document.getElementById('global-offline-banner');
     if(offlineDiv) {
-        offlineDiv.style.background = '#22c55e';
-        offlineDiv.innerHTML = '<i class="fa-solid fa-check" style="margin-right: 8px;"></i> Conexi髇 restaurada!';
-        setTimeout(() => offlineDiv.remove(), 3000);
+        offlineDiv.innerHTML = '<div style="background: #22c55e; color: white; padding: 20px 40px; border-radius: 8px; font-size: 18px; font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.2);"><i class="fa-solid fa-check" style="margin-right: 12px;"></i> Conexi\u00F3n restaurada</div>';
+        setTimeout(() => {
+            offlineDiv.remove();
+            document.body.style.overflow = 'auto';
+        }, 3000);
     }
 });

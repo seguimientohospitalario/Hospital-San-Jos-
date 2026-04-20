@@ -1,4 +1,4 @@
-/* Módulo Verificación Paciente - Estilos Locales */
+/* Modulo Verificacion Paciente - Estilos */
 
 .search-filters-container {
     background: #ffffff;
@@ -35,131 +35,261 @@
 
 .filter-input:focus {
     border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-.calendar-container {
-    background: #ffffff;
-    padding: 25px;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    margin-top: 20px;
-}
-
-.calendar-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 1px solid #f1f5f9;
-}
-
-.days-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
-}
-
-.day-card {
-    border: 1px solid #e2e8f0;
-    border-radius: 8px;
-    padding: 10px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.day-card:hover {
-    border-color: #3b82f6;
-    background: #f8fafc;
-}
-
-.day-card.selected {
-    border-color: #3b82f6;
-    background: #eff6ff;
-}
-
-.day-number {
-    font-size: 18px;
-    font-weight: 700;
-    color: #1e293b;
-}
-
-.day-name {
-    font-size: 12px;
-    color: #64748b;
-    text-transform: uppercase;
-}
-
-.status-indicator {
-    height: 8px;
-    width: 100%;
-    border-radius: 4px;
-    margin-top: 5px;
-    background: #e2e8f0;
-}
-
-/* Estados Visuales */
-.status-hosp { background: #fef3c7; color: #d97706; border-color: #fcd34d; }
-.status-hosp .status-indicator { background: #d97706; }
-
-.status-alta { background: #dcfce7; color: #15803d; border-color: #86efac; }
-.status-alta .status-indicator { background: #15803d; }
-
-.status-cambio { background: #f3e8ff; color: #7e22ce; border-color: #d8b4fe; }
-.status-cambio .status-indicator { background: #7e22ce; }
-
-.status-selector {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-    flex-wrap: wrap;
-}
-
-.status-option {
-    padding: 8px 15px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    border: 2px solid transparent;
-    transition: all 0.2s;
-}
-
-.opt-hosp { background: #fef3c7; color: #d97706; }
-.opt-hosp:hover { border-color: #d97706; }
-
-.opt-alta { background: #dcfce7; color: #15803d; }
-.opt-alta:hover { border-color: #15803d; }
-
-.opt-cambio { background: #f3e8ff; color: #7e22ce; }
-.opt-cambio:hover { border-color: #7e22ce; }
-
-.opt-none { background: #f1f5f9; color: #64748b; }
-.opt-none:hover { border-color: #64748b; }
-
+/* ============================================
+   BANNER PACIENTE
+   ============================================ */
 .patient-info-banner {
-    background: #f8fafc;
-    padding: 15px 20px;
-    border-radius: 8px;
+    background: #ffffff;
+    padding: 20px 25px;
+    border-radius: 12px;
     margin-bottom: 20px;
     border-left: 4px solid #3b82f6;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    flex-wrap: wrap;
+    gap: 15px;
 }
 
 .banner-details h4 {
     margin: 0;
     color: #0f172a;
     font-size: 16px;
+    font-weight: 700;
 }
 
 .banner-details p {
     margin: 5px 0 0 0;
     color: #64748b;
     font-size: 13px;
+}
+
+/* Badges de dias */
+.dias-badge {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.dias-activo {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.dias-alta {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.dias-fallecido {
+    background: #fee2e2;
+    color: #ef4444;
+}
+
+/* ============================================
+   TIMELINE
+   ============================================ */
+.timeline-section {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+}
+
+.timeline-header {
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.timeline-header h3 {
+    margin: 0;
+    color: #0f172a;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.timeline-container {
+    position: relative;
+    padding-left: 40px;
+}
+
+.timeline-container::before {
+    content: '';
+    position: absolute;
+    left: 17px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e2e8f0;
+}
+
+.timeline-empty {
+    text-align: center;
+    padding: 30px;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+.timeline-event {
+    position: relative;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    animation: fadeInUp 0.3s ease;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.timeline-dot {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+    left: -40px;
+    margin-right: -40px;
+    z-index: 1;
+    font-size: 14px;
+}
+
+.dot-hospitalizado {
+    background: #dbeafe;
+    color: #2563eb;
+    box-shadow: 0 0 0 4px #eff6ff;
+}
+
+.dot-cambio {
+    background: #f3e8ff;
+    color: #7e22ce;
+    box-shadow: 0 0 0 4px #faf5ff;
+}
+
+.dot-alta {
+    background: #dcfce7;
+    color: #15803d;
+    box-shadow: 0 0 0 4px #f0fdf4;
+}
+
+.dot-fallecido {
+    background: #fee2e2;
+    color: #ef4444;
+    box-shadow: 0 0 0 4px #fef2f2;
+}
+
+.timeline-content {
+    background: #f8fafc;
+    border-radius: 10px;
+    padding: 15px 20px;
+    flex: 1;
+    border: 1px solid #f1f5f9;
+    transition: box-shadow 0.2s;
+}
+
+.timeline-content:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.timeline-event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.timeline-event-type {
+    font-size: 13px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 15px;
+}
+
+.timeline-event-type.dot-hospitalizado {
+    background: #dbeafe;
+    color: #2563eb;
+    box-shadow: none;
+}
+
+.timeline-event-type.dot-cambio {
+    background: #f3e8ff;
+    color: #7e22ce;
+    box-shadow: none;
+}
+
+.timeline-event-type.dot-alta {
+    background: #dcfce7;
+    color: #15803d;
+    box-shadow: none;
+}
+
+.timeline-event-type.dot-fallecido {
+    background: #fee2e2;
+    color: #ef4444;
+    box-shadow: none;
+}
+
+.timeline-event-date {
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.timeline-detail {
+    font-size: 14px;
+    color: #475569;
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ============================================
+   FORMULARIO DE EVENTOS
+   ============================================ */
+.event-form-section {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.event-form-title {
+    margin: 0 0 20px 0;
+    color: #0f172a;
+    font-size: 18px;
+    font-weight: 700;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.event-form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px 20px;
+}
+
+.event-form textarea.standard-input {
+    resize: vertical;
+    min-height: 60px;
+    font-family: inherit;
 }

@@ -36,7 +36,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const filterServicio = document.getElementById('filter-servicio');
     const btnClearFilterServicio = document.getElementById('clear-filter-servicio');
     const inputDni = document.getElementById('paciente-dni');
-    
+
+    // Utility to strip accents and convert to uppercase
+    const normalizeText = (text) => {
+        if (!text) return '';
+        return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+    };
+
     // Variables de Paginación Inteligente y DB
     let currentPage = 1;
     let rowsPerPage = 5; 
@@ -80,14 +86,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ============================================
     // CARGA DE DATOS LOCALES VS SERVIDOR (PAGINACIÓN)
     // ============================================
-    const loadPacientes = async () => {
+        const loadPacientes = async () => {
         try {
             loadingIndicator.style.display = 'block';
             tableElement.style.display = 'none';
 
             // Cálculo Matemático (altura adaptativa)
-            const availableHeight = window.innerHeight - 350; // offset por module-commands y header
-            let calculatedRows = Math.floor(availableHeight / 60); // 60px alto de fila aprox
+            const availableHeight = window.innerHeight - 350;
+            let calculatedRows = Math.floor(availableHeight / 60);
             rowsPerPage = calculatedRows > 2 ? calculatedRows : 3;
 
             const startRange = (currentPage - 1) * rowsPerPage;
@@ -100,7 +106,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 .range(startRange, endRange);
 
             if (searchQuery) {
-                queryObj = queryObj.eq('dni', searchQuery);
+                const normQuery = normalizeText(searchQuery);
+                queryObj = queryObj.or('dni.ilike.%' + normQuery + '%,apellidos.ilike.%' + normQuery + '%,nombres.ilike.%' + normQuery + '%');
             }
 
             if (filterQuery) {
@@ -123,9 +130,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const getCondicionClass = (condicion) => {
         if (condicion === 'Hospitalizado') return 'cond-hospitalizado';
-        if (condicion === 'Alta') return 'cond-alta';
+        if (condicion === 'Alta' || condicion === 'Salió de Alta') return 'cond-alta';
         if (condicion === 'Fallecido') return 'cond-fallecido';
-        if (condicion === 'Cambio de servicio' || condicion === 'Cambio Tipo de Seguro') return 'cond-cambio';
         return '';
     };
 
@@ -197,7 +203,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('paciente-condicion').value = p.condicion;
 
         if (p.tipo_seguro === 'Otros') {
-            grupoOtros.style.display = 'block';
+            grupoOtros.style.display = 'flex';
             inputOtros.value = p.seguro_otros || '';
             inputOtros.required = true;
         } else {
@@ -342,7 +348,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     selectSeguro.addEventListener('change', (e) => {
         if (e.target.value === 'Otros') {
-            grupoOtros.style.display = 'block';
+            grupoOtros.style.display = 'flex';
             inputOtros.required = true;
         } else {
             grupoOtros.style.display = 'none';
@@ -391,8 +397,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             payload.dni = document.getElementById('paciente-dni').value.trim();
             payload.historia_clinica = document.getElementById('paciente-hc').value.trim();
             payload.fecha_nacimiento = document.getElementById('paciente-fecha-nac').value;
-            payload.apellidos = document.getElementById('paciente-apellidos').value.trim().toUpperCase();
-            payload.nombres = document.getElementById('paciente-nombres').value.trim().toUpperCase();
+            payload.apellidos = normalizeText(document.getElementById('paciente-apellidos').value.trim());
+            payload.nombres = normalizeText(document.getElementById('paciente-nombres').value.trim());
             payload.codigo_verificacion = document.getElementById('paciente-codigo-ver').value.trim() || null;
         }
 

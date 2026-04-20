@@ -3,31 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seguimiento - Hospital San José</title>
+    <title>B&#250;squeda Pacientes - Hospital San Jos&#233;</title>
     <link rel="stylesheet" href="../../css/styles.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="../../css/registro-pacientes.css">
+    <link rel="stylesheet" href="../../css/verificacion-paciente.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
     <div class="main-wrapper">
         <main class="page-content" id="page-content">
-            <div class="module-card">
-                <h3>Vista en desarrollo</h3>
-                <p>El motor de búsqueda de historias clínicas irá aquí.</p>
-                <a href="../../menu.html" class="btn-module primary" style="width: fit-content; margin-top:20px;">
-                    <i class="fa-solid fa-arrow-left"></i> Volver al Menú
-                </a>
+
+            <!-- BARRA DE OPERACIONES -->
+            <div class="module-commands">
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <div class="global-search-box" style="width: 380px; display: flex; align-items: center; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; padding: 0 15px;">
+                        <i class="fa-solid fa-magnifying-glass" style="color: #64748b;"></i>
+                        <input type="text" id="search-input" placeholder="Buscar por DNI, apellidos o nombres..." class="global-search-input" style="border: none; padding: 12px 10px; outline: none; flex: 1; min-width: 0;">
+                    </div>
+                    <button class="btn-module primary" id="btn-search" style="padding: 10px 20px;"><i class="fa-solid fa-search"></i> Buscar</button>
+                    <button class="btn-module" id="btn-clear" style="display: none; background: #f8fafc; color: #1e293b; border: 1px solid #e2e8f0; padding: 8px 15px;">Limpiar</button>
+                </div>
             </div>
+
+            <!-- TABLA DE PACIENTES -->
+            <div id="view-lista" style="margin-top: 20px;">
+                <div class="data-table-container">
+                    <div id="loading-indicator" style="display: none; text-align: center; padding: 40px; color: #3b82f6;">
+                        <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem;"></i>
+                        <p style="margin-top: 10px; font-weight: 500;">Cargando pacientes...</p>
+                    </div>
+
+                    <table class="data-table" id="table-element">
+                        <thead>
+                            <tr>
+                                <th>DNI</th>
+                                <th>Paciente</th>
+                                <th>N&#186; Historia</th>
+                                <th>Tipo de Seguro</th>
+                                <th>Condici&#243;n</th>
+                                <th>D&#237;as Hospitalizado</th>
+                                <th style="text-align: center; width: 100px;">Acci&#243;n</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabla-pacientes">
+                        </tbody>
+                    </table>
+                </div>
+                <div id="pagination-container" class="pagination-controls"></div>
+            </div>
+
+            <!-- Toast -->
+            <div id="toast" class="toast-success" style="display: none;">
+                <i class="fa-solid fa-check-circle" id="toast-icon"></i>
+                <span id="toast-text"></span>
+            </div>
+
         </main>
     </div>
+
     <script src="../../js/supabase-config.js"></script>
     <script src="../../js/layout.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) window.location.href = 'index.html';
-        });
-    </script>
+    <script src="../../js/seguimiento-pacientes.js"></script>
 </body>
 </html>
-

@@ -118,7 +118,7 @@
                             </div>
                         </div>
 
-                        <div class="input-stacked col-span-6" id="grupo-otros" style="display: none;">
+                        <div class="input-stacked col-span-2" id="grupo-otros" style="display: none;">
                             <label>Especificar Seguro</label>
                             <input type="text" id="paciente-seguro-otros" class="standard-input">
                         </div>
@@ -130,19 +130,19 @@
                         </div>
 
                         <!-- SERVICIO -->
-                        <div class="input-stacked col-span-2">
+                        <div class="input-stacked col-span-3">
                             <label>Servicio</label>
-                            <input type="text" id="paciente-servicio" class="standard-input" oninput="this.value = this.value.replace(/[^A-Za-zñÑáéíóúÁÉÍÓÚ\s]/g, '')">
+                            <input type="text" id="paciente-servicio" class="standard-input">
                         </div>
 
-                        <!-- CONDICIÓN -->
-                        <div class="input-stacked col-span-6">
-                            <label>Condición Actual</label>
-                            <div class="standard-select-wrapper">
+                        <!-- CONDICION ACTUAL -->
+                        <div class="input-stacked col-span-3">
+                            <label>Condición Actual *</label>
+                            <div class="material-select-wrapper">
                                 <select id="paciente-condicion" class="standard-input" required>
                                     <option value="" disabled selected hidden>Seleccione</option>
                                     <option value="Hospitalizado">Hospitalizado</option>
-                                    <option value="Alta">Alta</option>
+                                    <option value="Salió de Alta">Alta</option>
                                     <option value="Fallecido">Fallecido</option>
                                 </select>
                             </div>

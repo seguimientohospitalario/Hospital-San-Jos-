@@ -1,14 +1,14 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    // Inicialización y Auth
     const client = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
     const { data: { session } } = await client.auth.getSession();
-    
+
     if (!session) {
         window.location.href = '../../index.html';
         return;
     }
+    const userId = session.user.id;
 
-    // Referencias del DOM - Filtros
+    // DOM - Filtros
     const filterDni = document.getElementById('filter-dni');
     const filterHc = document.getElementById('filter-hc');
     const filterApellidos = document.getElementById('filter-apellidos');
@@ -16,36 +16,72 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnSearch = document.getElementById('btn-search');
     const btnClear = document.getElementById('btn-clear');
 
-    // Referencias del DOM - Vistas
+    // DOM - Vistas
+    const searchFilters = document.getElementById('search-filters');
     const viewResultados = document.getElementById('view-resultados');
-    const viewCalendario = document.getElementById('view-calendario');
+    const viewTimeline = document.getElementById('view-timeline');
     const tablePacientes = document.getElementById('table-pacientes');
     const tbodyPacientes = document.getElementById('tbody-pacientes');
     const loadingIndicator = document.getElementById('loading-indicator');
-    
-    // Referencias del DOM - Calendario
-    const daysGrid = document.getElementById('days-grid');
+
+    // DOM - Timeline
+    const timelineContainer = document.getElementById('timeline-container');
+    const timelineEmpty = document.getElementById('timeline-empty');
     const bannerNombre = document.getElementById('banner-paciente-nombre');
     const bannerInfo = document.getElementById('banner-paciente-info');
+    const bannerDias = document.getElementById('banner-dias');
+    const bannerCondicion = document.getElementById('banner-condicion');
     const btnBackToList = document.getElementById('btn-back-to-list');
-    const statusUpdatePanel = document.getElementById('status-update-panel');
-    const selectedDayLabel = document.getElementById('selected-day-label');
+
+    // DOM - Formulario
+    const eventForm = document.getElementById('event-form');
+    const eventoTipo = document.getElementById('evento-tipo');
+    const eventoDetalle = document.getElementById('evento-detalle');
+    const eventoNuevoSeguro = document.getElementById('evento-nuevo-seguro');
+    const eventoNuevoSeguroOtros = document.getElementById('evento-nuevo-seguro-otros');
+    const grupoNuevoSeguro = document.getElementById('grupo-nuevo-seguro');
+    const grupoNuevoSeguroOtros = document.getElementById('grupo-nuevo-seguro-otros');
+    const btnRegistrar = document.getElementById('btn-registrar-evento');
+    const registrarText = document.getElementById('registrar-text');
+    const registrarSpinner = document.getElementById('registrar-spinner');
     const toast = document.getElementById('toast');
 
     let selectedPatient = null;
-    let selectedDay = null;
+
+    const normalizeText = (text) => {
+        if (!text) return '';
+        return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+    };
+
+    const showToast = (text, color) => {
+        document.getElementById('toast-text').textContent = text;
+        toast.style.display = 'flex';
+        toast.style.background = color;
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+            toast.classList.remove('show');
+            setTimeout(() => toast.style.display = 'none', 400);
+        }, 3000);
+    };
+
+    const getCondicionClass = (condicion) => {
+        if (condicion === 'Hospitalizado') return 'cond-hospitalizado';
+        if (condicion === 'Alta' || condicion === 'Sali\u00F3 de Alta') return 'cond-alta';
+        if (condicion === 'Fallecido') return 'cond-fallecido';
+        return '';
+    };
 
     // ============================================
-    // LÓGICA DE BÚSQUEDA
+    // BUSQUEDA DE PACIENTES
     // ============================================
     const searchPacientes = async () => {
         const dni = filterDni.value.trim();
         const hc = filterHc.value.trim();
-        const apellidos = filterApellidos.value.trim().toUpperCase();
-        const nombres = filterNombres.value.trim().toUpperCase();
+        const apellidos = normalizeText(filterApellidos.value.trim());
+        const nombres = normalizeText(filterNombres.value.trim());
 
         if (!dni && !hc && !apellidos && !nombres) {
-            showToast('Por favor, ingrese al menos un criterio de búsqueda', '#ef4444');
+            showToast('Ingrese al menos un criterio de b\u00FAsqueda', '#ef4444');
             return;
         }
 
@@ -56,16 +92,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             let query = client.from('pacientes').select('*');
 
-            if (dni) query = query.ilike('dni', `%${dni}%`);
-            if (hc) query = query.ilike('historia_clinica', `%${hc}%`);
-            if (apellidos) query = query.ilike('apellidos', `%${apellidos}%`);
-            if (nombres) query = query.ilike('nombres', `%${nombres}%`);
+            if (dni) query = query.ilike('dni', '%' + dni + '%');
+            if (hc) query = query.ilike('historia_clinica', '%' + hc + '%');
+            if (apellidos) query = query.ilike('apellidos', '%' + apellidos + '%');
+            if (nombres) query = query.ilike('nombres', '%' + nombres + '%');
 
             const { data, error } = await query.limit(10);
-
             if (error) throw error;
 
-            renderTable(data);
+            renderSearchTable(data);
         } catch (error) {
             console.error('Error buscando pacientes:', error.message);
             showToast('Error al buscar pacientes', '#ef4444');
@@ -75,9 +110,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    const renderTable = (items) => {
+    const renderSearchTable = (items) => {
+        tbodyPacientes.innerHTML = '';
         if (!items || items.length === 0) {
-            tbodyPacientes.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 30px; color:#94a3b8;">No se encontraron pacientes con esos criterios.</td></tr>`;
+            tbodyPacientes.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 30px; color:#94a3b8;">No se encontraron pacientes con esos criterios.</td></tr>';
             return;
         }
 
@@ -92,129 +128,256 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td><span class="condicion-badge ${getCondicionClass(item.condicion)}">${item.condicion}</span></td>
                 <td style="text-align: center;">
                     <button class="btn-module primary btn-select-patient" data-id="${item.id}" style="padding: 5px 10px; font-size: 12px;">
-                        <i class="fa-solid fa-calendar-check"></i> Verificar
+                        <i class="fa-solid fa-timeline"></i> Verificar
                     </button>
                 </td>
             `;
             tbodyPacientes.appendChild(row);
         });
 
-        // Eventos para seleccionar paciente
         document.querySelectorAll('.btn-select-patient').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const id = e.currentTarget.getAttribute('data-id');
                 const patient = items.find(p => p.id == id);
-                if (patient) openCalendar(patient);
+                if (patient) openTimeline(patient);
             });
         });
     };
 
-    const getCondicionClass = (condicion) => {
-        if (condicion === 'Hospitalizado') return 'cond-hospitalizado';
-        if (condicion === 'Alta') return 'cond-alta';
-        if (condicion === 'Fallecido') return 'cond-fallecido';
-        return 'cond-cambio';
-    };
-
     // ============================================
-    // LÓGICA DEL CALENDARIO
+    // TIMELINE
     // ============================================
-    const openCalendar = (patient) => {
+    const openTimeline = async (patient) => {
         selectedPatient = patient;
+
+        // Ocultar busqueda, mostrar timeline
+        searchFilters.style.display = 'none';
         viewResultados.style.display = 'none';
-        document.querySelector('.search-filters-container').style.display = 'none';
-        
-        bannerNombre.textContent = `PACIENTE: ${patient.apellidos}, ${patient.nombres}`;
-        bannerInfo.textContent = `DNI: ${patient.dni} | HC: ${patient.historia_clinica} | SERVICIO: ${patient.servicio || 'N/A'}`;
-        
-        generateDays();
-        viewCalendario.style.display = 'block';
+        viewTimeline.style.display = 'block';
+
+        // Banner
+        bannerNombre.textContent = 'PACIENTE: ' + patient.apellidos + ', ' + patient.nombres;
+        bannerInfo.textContent = 'DNI: ' + patient.dni + ' | HC: ' + patient.historia_clinica + ' | Seguro: ' + patient.tipo_seguro + (patient.seguro_otros ? ' (' + patient.seguro_otros + ')' : '') + ' | Servicio: ' + (patient.servicio || 'N/A');
+
+        // Reset form
+        eventForm.reset();
+        grupoNuevoSeguro.style.display = 'none';
+        grupoNuevoSeguroOtros.style.display = 'none';
+
+        await loadTimeline();
     };
 
-    const generateDays = () => {
-        daysGrid.innerHTML = '';
-        const now = new Date();
-        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-        const monthNames = ["ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"];
-        
-        document.getElementById('current-month-year').textContent = `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+    const loadTimeline = async () => {
+        try {
+            const { data: eventos, error } = await client
+                .from('historial_eventos')
+                .select('*')
+                .eq('paciente_id', selectedPatient.id)
+                .order('fecha_evento', { ascending: true });
 
-        for (let i = 1; i <= daysInMonth; i++) {
-            const dayCard = document.createElement('div');
-            dayCard.className = 'day-card';
-            dayCard.dataset.day = i;
-            
-            // Simular algunos estados aleatorios (Solo visual como pidió el usuario)
-            if (i < now.getDate() && i % 5 === 0) {
-                dayCard.classList.add('status-hosp');
-            }
+            if (error) throw error;
 
-            dayCard.innerHTML = `
-                <span class="day-number">${i}</span>
-                <span class="day-name">${getDayName(now.getFullYear(), now.getMonth(), i)}</span>
-                <div class="status-indicator"></div>
-            `;
-
-            dayCard.addEventListener('click', () => {
-                selectDay(i, dayCard);
-            });
-
-            daysGrid.appendChild(dayCard);
+            renderTimeline(eventos || []);
+            updateBannerStats(eventos || []);
+        } catch (error) {
+            console.error('Error cargando timeline:', error.message);
+            showToast('Error al cargar historial', '#ef4444');
         }
     };
 
-    const getDayName = (year, month, day) => {
-        const date = new Date(year, month, day);
-        const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-        return days[date.getDay()];
-    };
+    const renderTimeline = (eventos) => {
+        // Limpiar contenedor (excepto el empty msg)
+        const existingEvents = timelineContainer.querySelectorAll('.timeline-event');
+        existingEvents.forEach(el => el.remove());
 
-    const selectDay = (day, element) => {
-        selectedDay = day;
-        document.querySelectorAll('.day-card').forEach(d => d.classList.remove('selected'));
-        element.classList.add('selected');
-        
-        selectedDayLabel.textContent = `Actualizar estado para el día ${day}:`;
-        statusUpdatePanel.style.display = 'block';
-        statusUpdatePanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    };
+        if (!eventos || eventos.length === 0) {
+            timelineEmpty.style.display = 'block';
+            return;
+        }
 
-    // ============================================
-    // MANEJO DE ESTADOS (VISUAL)
-    // ============================================
-    document.querySelectorAll('.status-option').forEach(opt => {
-        opt.addEventListener('click', () => {
-            const status = opt.getAttribute('data-status');
-            const dayElement = document.querySelector(`.day-card[data-day="${selectedDay}"]`);
-            
-            // Limpiar clases previas
-            dayElement.classList.remove('status-hosp', 'status-alta', 'status-cambio');
-            
-            // Aplicar nueva clase visual
-            if (status === 'Hospitalizado') dayElement.classList.add('status-hosp');
-            else if (status === 'Alta') dayElement.classList.add('status-alta');
-            else if (status === 'Cambio Cobertura') dayElement.classList.add('status-cambio');
-            
-            showToast(`Estado del día ${selectedDay} actualizado (Visual)`, '#10b981');
+        timelineEmpty.style.display = 'none';
+
+        eventos.forEach(ev => {
+            const eventEl = document.createElement('div');
+            eventEl.className = 'timeline-event';
+
+            const dotClass = getEventDotClass(ev.tipo_evento);
+            const iconClass = getEventIcon(ev.tipo_evento);
+            const fecha = new Date(ev.fecha_evento);
+            const fechaStr = fecha.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const horaStr = fecha.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+
+            let detalleHTML = ev.detalle ? '<p class="timeline-detail">' + ev.detalle + '</p>' : '';
+
+            if (ev.tipo_evento === 'Cambio Cobertura' && ev.nuevo_seguro) {
+                detalleHTML += '<p class="timeline-detail" style="font-style: italic;">Nuevo seguro: <strong>' + ev.nuevo_seguro + '</strong>' + (ev.nuevo_seguro_otros ? ' (' + ev.nuevo_seguro_otros + ')' : '') + '</p>';
+            }
+
+            eventEl.innerHTML = `
+                <div class="timeline-dot ${dotClass}">
+                    <i class="${iconClass}"></i>
+                </div>
+                <div class="timeline-content">
+                    <div class="timeline-event-header">
+                        <span class="timeline-event-type ${dotClass}">${ev.tipo_evento}</span>
+                        <span class="timeline-event-date">${fechaStr} - ${horaStr}</span>
+                    </div>
+                    ${detalleHTML}
+                </div>
+            `;
+            timelineContainer.appendChild(eventEl);
         });
+    };
+
+    const getEventDotClass = (tipo) => {
+        if (tipo === 'Hospitalizado') return 'dot-hospitalizado';
+        if (tipo === 'Cambio Cobertura') return 'dot-cambio';
+        if (tipo === 'Alta') return 'dot-alta';
+        if (tipo === 'Fallecido') return 'dot-fallecido';
+        return '';
+    };
+
+    const getEventIcon = (tipo) => {
+        if (tipo === 'Hospitalizado') return 'fa-solid fa-bed';
+        if (tipo === 'Cambio Cobertura') return 'fa-solid fa-shield-halved';
+        if (tipo === 'Alta') return 'fa-solid fa-house-medical-circle-check';
+        if (tipo === 'Fallecido') return 'fa-solid fa-heart-crack';
+        return 'fa-solid fa-circle';
+    };
+
+    const updateBannerStats = (eventos) => {
+        // Refrescar condicion del paciente desde BD
+        // Calcular dias
+        let ultimoIngreso = null;
+        let ultimaAlta = null;
+
+        for (let i = eventos.length - 1; i >= 0; i--) {
+            const ev = eventos[i];
+            if ((ev.tipo_evento === 'Alta' || ev.tipo_evento === 'Fallecido') && !ultimaAlta) {
+                ultimaAlta = new Date(ev.fecha_evento);
+            }
+            if (ev.tipo_evento === 'Hospitalizado') {
+                ultimoIngreso = new Date(ev.fecha_evento);
+                break;
+            }
+        }
+
+        const condicion = selectedPatient.condicion;
+        let diasTexto = 'Sin registro';
+        let diasClase = '';
+
+        if (ultimoIngreso) {
+            const fin = (condicion === 'Hospitalizado') ? new Date() : (ultimaAlta || new Date());
+            const dias = Math.max(0, Math.ceil((fin - ultimoIngreso) / (1000 * 60 * 60 * 24)));
+            diasTexto = dias + (dias === 1 ? ' d\u00EDa' : ' d\u00EDas');
+            diasClase = condicion === 'Hospitalizado' ? 'dias-activo' : 'dias-alta';
+        }
+
+        bannerDias.textContent = diasTexto;
+        bannerDias.className = 'dias-badge ' + diasClase;
+        bannerCondicion.textContent = condicion;
+        bannerCondicion.className = 'condicion-badge ' + getCondicionClass(condicion);
+    };
+
+    // ============================================
+    // MOSTRAR/OCULTAR CAMPOS DE CAMBIO COBERTURA
+    // ============================================
+    eventoTipo.addEventListener('change', (e) => {
+        if (e.target.value === 'Cambio Cobertura') {
+            grupoNuevoSeguro.style.display = 'block';
+        } else {
+            grupoNuevoSeguro.style.display = 'none';
+            grupoNuevoSeguroOtros.style.display = 'none';
+        }
+    });
+
+    eventoNuevoSeguro.addEventListener('change', (e) => {
+        if (e.target.value === 'Otros') {
+            grupoNuevoSeguroOtros.style.display = 'block';
+        } else {
+            grupoNuevoSeguroOtros.style.display = 'none';
+        }
     });
 
     // ============================================
-    // UTILIDADES Y EVENTOS
+    // REGISTRAR EVENTO
     // ============================================
-    const showToast = (text, color) => {
-        document.getElementById('toast-text').textContent = text;
-        toast.style.display = 'flex';
-        toast.style.background = color;
-        setTimeout(() => toast.classList.add('show'), 10);
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.style.display = 'none', 400);
-        }, 3000);
-    };
+    eventForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const tipo = eventoTipo.value;
+        if (!tipo) {
+            showToast('Seleccione un tipo de evento', '#ef4444');
+            return;
+        }
+
+        // Validaciones
+        if (tipo === 'Cambio Cobertura' && !eventoNuevoSeguro.value) {
+            showToast('Seleccione el nuevo tipo de seguro', '#ef4444');
+            return;
+        }
+
+        btnRegistrar.disabled = true;
+        registrarText.textContent = 'Registrando...';
+        registrarSpinner.style.display = 'inline-block';
+
+        try {
+            const payload = {
+                paciente_id: selectedPatient.id,
+                tipo_evento: tipo,
+                detalle: eventoDetalle.value.trim() || null,
+                registrado_por: userId
+            };
+
+            if (tipo === 'Cambio Cobertura') {
+                payload.nuevo_seguro = eventoNuevoSeguro.value;
+                payload.nuevo_seguro_otros = eventoNuevoSeguro.value === 'Otros' ? eventoNuevoSeguroOtros.value.trim() : null;
+            }
+
+            const { error } = await client.from('historial_eventos').insert([payload]);
+            if (error) throw error;
+
+            // Refrescar datos del paciente (el trigger pudo haber cambiado la condicion/seguro)
+            const { data: updatedPatient } = await client
+                .from('pacientes')
+                .select('*')
+                .eq('id', selectedPatient.id)
+                .single();
+
+            if (updatedPatient) {
+                selectedPatient = updatedPatient;
+                // Actualizar banner info
+                bannerInfo.textContent = 'DNI: ' + selectedPatient.dni + ' | HC: ' + selectedPatient.historia_clinica + ' | Seguro: ' + selectedPatient.tipo_seguro + (selectedPatient.seguro_otros ? ' (' + selectedPatient.seguro_otros + ')' : '') + ' | Servicio: ' + (selectedPatient.servicio || 'N/A');
+            }
+
+            showToast('Evento registrado exitosamente', '#10b981');
+            eventForm.reset();
+            grupoNuevoSeguro.style.display = 'none';
+            grupoNuevoSeguroOtros.style.display = 'none';
+
+            await loadTimeline();
+        } catch (err) {
+            console.error('Error registrando evento:', err);
+            showToast(err.message || 'Error al registrar evento', '#ef4444');
+        } finally {
+            btnRegistrar.disabled = false;
+            registrarText.textContent = 'Registrar Evento';
+            registrarSpinner.style.display = 'none';
+        }
+    });
+
+    // ============================================
+    // NAVEGACION
+    // ============================================
+    btnBackToList.addEventListener('click', () => {
+        viewTimeline.style.display = 'none';
+        viewResultados.style.display = 'block';
+        searchFilters.style.display = 'grid';
+        selectedPatient = null;
+    });
 
     btnSearch.addEventListener('click', searchPacientes);
-    
+
     [filterDni, filterHc, filterApellidos, filterNombres].forEach(input => {
         input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') searchPacientes();
@@ -230,10 +393,28 @@ document.addEventListener('DOMContentLoaded', async () => {
         tablePacientes.style.display = 'none';
     });
 
-    btnBackToList.addEventListener('click', () => {
-        viewCalendario.style.display = 'none';
-        viewResultados.style.display = 'block';
-        document.querySelector('.search-filters-container').style.display = 'grid';
-        statusUpdatePanel.style.display = 'none';
-    });
+    // ============================================
+    // AUTO-CARGA POR QUERY PARAM
+    // ============================================
+    const urlParams = new URLSearchParams(window.location.search);
+    const dniParam = urlParams.get('dni');
+
+    if (dniParam) {
+        filterDni.value = dniParam;
+        try {
+            const { data, error } = await client
+                .from('pacientes')
+                .select('*')
+                .eq('dni', dniParam)
+                .single();
+
+            if (error) throw error;
+            if (data) {
+                openTimeline(data);
+            }
+        } catch (err) {
+            console.error('Error cargando paciente por DNI:', err.message);
+            showToast('No se encontr\u00F3 paciente con DNI ' + dniParam, '#ef4444');
+        }
+    }
 });
