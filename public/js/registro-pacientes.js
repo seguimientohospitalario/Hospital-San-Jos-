@@ -43,12 +43,49 @@ document.addEventListener('DOMContentLoaded', async () => {
         return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
     };
 
-    // Inicializar Flatpickr
-    flatpickr("#paciente-fecha-nac", {
+    // Inicializar Flatpickr con m\u00e1scara autom\u00e1tica dd/mm/yyyy
+    const fpInstance = flatpickr("#paciente-fecha-nac", {
         locale: "es",
         dateFormat: "d/m/Y",
         allowInput: true,
-        maxDate: "today"
+        maxDate: "today",
+        // Parsear siempre en formato d/m/Y sin depender de la locale del OS
+        parseDate: (dateStr, format) => {
+            const parts = dateStr.split('/');
+            if (parts.length === 3) {
+                const day   = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1; // meses 0-indexed
+                const year  = parseInt(parts[2], 10);
+                if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
+                    return new Date(year, month, day);
+                }
+            }
+            return null;
+        },
+        onReady(_, __, instance) {
+            // M\u00e1scara: inserta '/' autom\u00e1ticamente al escribir d\u00edgitos
+            instance.input.addEventListener('input', function (e) {
+                // Si el usuario est\u00e1 borrando, no interferir
+                if (e.inputType && e.inputType.startsWith('delete')) return;
+
+                let digits = e.target.value.replace(/\D/g, '').slice(0, 8);
+                let masked = digits;
+
+                if (digits.length > 2) {
+                    masked = digits.slice(0, 2) + '/' + digits.slice(2);
+                }
+                if (digits.length > 4) {
+                    masked = digits.slice(0, 2) + '/' + digits.slice(2, 4) + '/' + digits.slice(4, 8);
+                }
+
+                e.target.value = masked;
+
+                // Si ya tiene 10 caracteres (dd/mm/yyyy), forzar parseo en Flatpickr
+                if (masked.length === 10) {
+                    instance.setDate(masked, true, 'd/m/Y');
+                }
+            });
+        }
     });
 
     // Variables de Paginación Inteligente y DB
