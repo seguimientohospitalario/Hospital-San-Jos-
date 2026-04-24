@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const RPA_BACKEND_URL = 'https://rpa-hospital.onrender.com';
+    const RPA_BACKEND_URL = 'https://rpa-hospital.onrender.com/api/validar-seguro';
 
     const btnSearch = document.getElementById('btn-search');
     const btnClear = document.getElementById('btn-clear');
