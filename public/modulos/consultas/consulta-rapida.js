@@ -1,21 +1,21 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const RPA_BACKEND_URL = 'http://localhost:3000/api/validar-seguro'; // Reemplazar con URL de prod cuando se publique
-    
+    const RPA_BACKEND_URL = 'https://rpa-hospital.onrender.com';
+
     const btnSearch = document.getElementById('btn-search');
     const btnClear = document.getElementById('btn-clear');
     const inputDNI = document.getElementById('filter-dni');
     const inputHC = document.getElementById('filter-hc');
     const inputApellidos = document.getElementById('filter-apellidos');
-    
+
     const tablePacientes = document.getElementById('table-pacientes');
     const tbodyPacientes = document.getElementById('tbody-pacientes');
     const loadingIndicator = document.getElementById('loading-indicator');
     const actionsBar = document.getElementById('actions-bar');
-    
+
     const btnValidar = document.getElementById('btn-validar');
     const selectedCountSpan = document.getElementById('selected-count');
     const spinner = document.getElementById('validar-spinner');
-    
+
     let selectedPatients = [];
     let accumulatedResults = [];
 
@@ -28,11 +28,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const toast = document.getElementById('toast');
         const toastIcon = document.getElementById('toast-icon');
         const toastText = document.getElementById('toast-text');
-        
+
         toast.className = isError ? 'toast-error' : 'toast-success';
         toastIcon.className = isError ? 'fa-solid fa-circle-xmark' : 'fa-solid fa-check-circle';
         toastText.textContent = message;
-        
+
         toast.style.display = 'flex';
         setTimeout(() => toast.style.display = 'none', 4000);
     };
@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         accumulatedResults.forEach(p => {
             const tr = document.createElement('tr');
-            
+
             // Checkbox td
             const tdCheck = document.createElement('td');
             tdCheck.style.textAlign = 'center';
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             chk.addEventListener('change', (e) => handleCheckboxChange(e, p));
             tdCheck.appendChild(chk);
-            
+
             const badgeClass = p.estado_validacion === 'OK' ? 'badge-ok' : (p.estado_validacion === 'ALERTA' ? 'badge-alerta' : 'badge-na');
 
             // Formatear fecha para mostrar en la tabla
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td id="ext-${p.id}" style="color: #475569;">${p.tipo_seguro_validado || '-'}</td>
                 <td id="badge-${p.id}"><span class="${badgeClass}">${p.estado_validacion || 'N/A'}</span></td>
             `;
-            
+
             tr.insertBefore(tdCheck, tr.firstChild);
             tbodyPacientes.appendChild(tr);
         });
@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (accumulatedResults.length > 5) {
             accumulatedResults = accumulatedResults.slice(0, 5);
         }
-        
+
         // Limpiar de selectedPatients si fueron eliminados por el límite
         selectedPatients = selectedPatients.filter(sp => accumulatedResults.find(ar => ar.id === sp.id));
         updateActionsBar();
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     btnSearch.addEventListener('click', loadPacientes);
-    
+
     [inputDNI, inputHC, inputApellidos].forEach(input => {
         input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') loadPacientes();
@@ -215,13 +215,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         btnValidar.disabled = true;
         spinner.style.display = 'inline-block';
-        
+
         let successCount = 0;
 
         for (const paciente of selectedPatients) {
             const extCell = document.getElementById(`ext-${paciente.id}`);
             const badgeCell = document.getElementById(`badge-${paciente.id}`);
-            
+
             extCell.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="color: #8b5cf6;"></i> Consultando...';
             badgeCell.innerHTML = '<span class="badge-na">EN PROCESO</span>';
 
@@ -246,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Si el bot extrajo datos correctamente (o "NO TIENE DERECHO DE COBERTURA")
                     const extraido = result.tipo_seguro_extraido || 'SIN RESULTADOS';
                     let estadoVal = 'ALERTA';
-                    
+
                     // Simple comparativa con lo declarado
                     if (paciente.tipo_seguro && extraido !== 'SIN RESULTADOS') {
                         // Si el extraído contiene lo declarado (ej: ESSALUD vs ESSALUD Regular)
@@ -292,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         btnValidar.disabled = false;
         spinner.style.display = 'none';
-        
+
         // Deseleccionar
         document.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
         selectedPatients = [];
@@ -304,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Carga inicial o Auto-Ejecución desde tabla de registros
     const urlParams = new URLSearchParams(window.location.search);
     const autoDni = urlParams.get('autoRpaDni');
-    
+
     if (autoDni) {
         inputDNI.value = autoDni;
         loadPacientes().then(() => {
