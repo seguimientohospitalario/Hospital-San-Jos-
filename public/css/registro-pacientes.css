@@ -23,7 +23,13 @@
     background: #ffffff;
     border-radius: 10px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    overflow: hidden;
+    /* overflow:hidden eliminado: bloqueaba el scroll horizontal en Android y desktop reducido */
+    overflow-x: auto;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch; /* scroll nativo fluido en iOS/Android */
+    touch-action: pan-x pan-y;         /* habilita gesto horizontal en Android Chrome */
+    display: block;
+    position: relative;
 }
 
 /* FORMULARIO: FRANJA AZUL SUPERIOR */

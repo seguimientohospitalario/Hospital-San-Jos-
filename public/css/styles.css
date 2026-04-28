@@ -864,12 +864,17 @@ body {
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
+    overflow-y: visible;
+    -webkit-overflow-scrolling: touch; /* inercia iOS */
+    touch-action: pan-x pan-y;         /* habilita scroll horizontal nativo en Android */
     background: #ffffff;
+    display: block;                    /* garantiza que el contenedor es bloque para scroll */
+    position: relative;                /* evita que transforms de ancestros rompan el scroll */
 }
 
 .data-table {
     width: 100%;
+    min-width: 700px; /* Genera scroll horizontal cuando la pantalla es menor al contenido */
     border-collapse: collapse;
     text-align: left;
 }
@@ -1345,20 +1350,23 @@ body {
         display: none;
     }
 
-    /* Sidebar como drawer off-canvas */
+    /* Sidebar como drawer off-canvas con ancho dinámico */
     .sidebar.collapsible-sidebar {
         position: fixed;
         top: 0;
         left: 0;
-        width: 260px !important;
-        min-width: 0 !important;
+        width: auto;       /* Dinámico: se calcula en JS */
+        min-width: 240px;
+        max-width: 85vw;
         height: 100vh;
         overflow-y: auto;
         overflow-x: hidden;
-        padding-right: 0;
-        transform: translateX(-105%);
-        transition: transform 0.2s ease;
+        padding-right: 16px;
+        transform: translateX(-110%);
+        transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 60;
+        /* Permitir que el texto dicte el ancho */
+        white-space: nowrap;
     }
 
     body.sidebar-open .sidebar.collapsible-sidebar {

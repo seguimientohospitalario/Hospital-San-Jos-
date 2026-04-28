@@ -416,6 +416,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         grupoServicioDe.style.display = val === 'Cambio de Servicio' ? 'block' : 'none';
         grupoServicioHacia.style.display = val === 'Cambio de Servicio' ? 'block' : 'none';
+
+        if (val === 'Cambio Cobertura' && selectedPatient) {
+            // Deshabilitar el seguro actual del paciente para evitar re-selección
+            const seguroActual = selectedPatient.tipo_seguro;
+            Array.from(eventoNuevoSeguro.options).forEach(opt => {
+                if (opt.value === seguroActual) {
+                    opt.disabled = true;
+                    // Marcar visualmente cuál es el actual
+                    if (!opt.textContent.includes('(Actual)')) {
+                        opt.textContent = opt.textContent + ' (Actual)';
+                    }
+                } else {
+                    opt.disabled = false;
+                    // Limpiar marcas previas
+                    opt.textContent = opt.textContent.replace(' (Actual)', '');
+                }
+            });
+            eventoNuevoSeguro.value = '';
+        }
         
         if (val === 'Cambio de Servicio' && selectedPatient) {
             eventoServicioDe.value = selectedPatient.servicio || '';
@@ -585,6 +604,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         const fromParam = new URLSearchParams(window.location.search).get('from');
         if (fromParam === 'rpa') {
             window.location.href = '../consultas/consulta-rapida.html';
+        } else if (fromParam === 'detalle') {
+            // Volver a la pantalla de Registros de Hospitalización del paciente
+            const dni = selectedPatient ? selectedPatient.dni : new URLSearchParams(window.location.search).get('dni');
+            window.location.href = `detalle-paciente.html?dni=${dni}`;
         } else {
             window.location.href = 'verificacion-paciente.html';
         }

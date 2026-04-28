@@ -77,15 +77,16 @@
 
                     <form id="registro-form">
                         <input type="hidden" id="paciente-id">
-                        
+
+                        <!-- FILA 1: DNI | CÓDIGO VER. | FECHA NAC (3+2+1 -> usamos 2+2+2) -->
                         <div class="input-stacked col-span-2">
                             <label>DNI del Paciente</label>
                             <input type="text" id="paciente-dni" class="standard-input" maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g, '')" pattern="[0-9]{8}" title="El DNI debe contener exactamente 8 dígitos numéricos" required>
                         </div>
 
                         <div class="input-stacked col-span-2">
-                            <label>Nº Historia Clínica</label>
-                            <input type="text" id="paciente-hc" class="standard-input hc-input" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
+                            <label>Código de Verificación</label>
+                            <input type="text" id="paciente-codigo-ver" class="standard-input" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                         </div>
 
                         <!-- FECHA NACIMIENTO -->
@@ -94,6 +95,7 @@
                             <input type="text" id="paciente-fecha-nac" class="standard-input" placeholder="dd/mm/aaaa" required>
                         </div>
 
+                        <!-- FILA 2: APELLIDOS | NOMBRES (3+3) -->
                         <div class="input-stacked col-span-3">
                             <label>Apellidos Completos</label>
                             <input type="text" id="paciente-apellidos" class="standard-input" oninput="this.value = this.value.replace(/[^A-Za-zñÑáéíóúÁÉÍÓÚ\s]/g, '')" required>
@@ -102,6 +104,12 @@
                         <div class="input-stacked col-span-3">
                             <label>Nombres Completos</label>
                             <input type="text" id="paciente-nombres" class="standard-input" oninput="this.value = this.value.replace(/[^A-Za-zñÑáéíóúÁÉÍÓÚ\s]/g, '')" required>
+                        </div>
+
+                        <!-- FILA 3: HC | TIPO SEGURO (2+2) + GRUPO OTROS (2) -->
+                        <div class="input-stacked col-span-2">
+                            <label>Nº Historia Clínica</label>
+                            <input type="text" id="paciente-hc" class="standard-input hc-input" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
                         </div>
 
                         <div class="input-stacked col-span-2">
@@ -124,12 +132,7 @@
                             <input type="text" id="paciente-seguro-otros" class="standard-input">
                         </div>
 
-                        <!-- CÓDIGO VERIFICACIÓN -->
-                        <div class="input-stacked col-span-2">
-                            <label>Código de Verificación</label>
-                            <input type="text" id="paciente-codigo-ver" class="standard-input" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-                        </div>
-
+                        <!-- FILA 4: SERVICIO | CONDICIÓN (3+3) -->
                         <!-- SERVICIO -->
                         <div class="input-stacked col-span-3">
                             <label>Servicio</label>

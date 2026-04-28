@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <p><i class="fa-solid fa-clock"></i> Duración: ${diasCiclo} días | Estado: <span class="condicion-badge ${evAlta && evAlta.tipo_evento === 'Fallecido' ? 'cond-fallecido' : (evAlta ? 'cond-alta' : 'cond-hospitalizado')}">${estadoTexto}</span></p>
                 </div>
                 <div>
-                    <a href="verificacion-paciente.html?dni=${pacienteData.dni}&ciclo=${id}" class="btn-module primary" style="text-decoration:none; display:inline-block; padding: 8px 15px;">
+                    <a href="verificacion-paciente.html?dni=${pacienteData.dni}&ciclo=${id}&from=detalle" class="btn-module primary" style="text-decoration:none; display:inline-block; padding: 8px 15px;">
                         <i class="fa-solid ${botonIcon}"></i> ${botonTexto}
                     </a>
                 </div>
