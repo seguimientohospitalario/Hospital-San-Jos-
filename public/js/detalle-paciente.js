@@ -81,7 +81,14 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('ficha-nom').textContent = pacienteData.nombres;
         document.getElementById('ficha-seg').textContent = pacienteData.tipo_seguro + (pacienteData.seguro_otros ? ` (${pacienteData.seguro_otros})` : '');
         document.getElementById('ficha-cod').textContent = pacienteData.codigo_verificacion || '-';
-        document.getElementById('ficha-creado').textContent = new Date(pacienteData.creado_en).toLocaleString('es-PE');
+        document.getElementById('ficha-creado').textContent = new Date(pacienteData.creado_en).toLocaleString('es-PE', { 
+            timeZone: 'America/Lima',
+            day: '2-digit', 
+            month: '2-digit', 
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
         document.getElementById('ficha-registrador').textContent = (pacienteData.autor && pacienteData.autor.nombre_completo) ? pacienteData.autor.nombre_completo.toUpperCase() : 'Desconocido';
 
         // 3. AGRUPACION POR CICLOS Y KPIS
@@ -112,8 +119,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             const evIngreso = evs.find(x => x.tipo_evento === 'Hospitalizado');
             const evAlta = evs.find(x => x.tipo_evento === 'Alta' || x.tipo_evento === 'Fallecido');
             
+            const nowPeru = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Lima" }));
             let inicio = evIngreso ? new Date(evIngreso.fecha_evento) : new Date(evs[0].fecha_evento);
-            let fin = evAlta ? new Date(evAlta.fecha_evento) : new Date(); // Si sigue activo, usa HOY
+            let fin = evAlta ? new Date(evAlta.fecha_evento) : nowPeru; 
             
             let diasCiclo = Math.max(0, Math.ceil((fin - inicio) / (1000 * 60 * 60 * 24)));
             let estadoTexto = evAlta ? evAlta.tipo_evento : 'Activo (En curso)';
@@ -128,7 +136,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             card.innerHTML = `
                 <div class="ciclo-info">
                     <h5>Registro #${id}</h5>
-                    <p><i class="fa-solid fa-calendar-plus"></i> Ingreso: ${inicio.toLocaleDateString('es-PE')}</p>
+                    <p><i class="fa-solid fa-calendar-plus"></i> Ingreso: ${inicio.toLocaleDateString('es-PE', { timeZone: 'America/Lima' })}</p>
                     <p><i class="fa-solid fa-clock"></i> Duración: ${diasCiclo} días | Estado: <span class="condicion-badge ${evAlta && evAlta.tipo_evento === 'Fallecido' ? 'cond-fallecido' : (evAlta ? 'cond-alta' : 'cond-hospitalizado')}">${estadoTexto}</span></p>
                 </div>
                 <div>

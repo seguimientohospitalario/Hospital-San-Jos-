@@ -4,30 +4,126 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión de Usuarios - Hospital San José</title>
+    <meta name="description" content="Módulo de gestión de usuarios del sistema de seguimiento hospitalario">
     <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/gestion-usuarios.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>/* page-specific overrides if needed */
+    </style>
 </head>
 <body>
     <div class="main-wrapper">
         <main class="page-content" id="page-content">
-            <div class="module-card">
-                <h3>Vista en desarrollo</h3>
-                <p>Contenido del módulo para usuarios genéricos irá aquí.</p>
-                <a href="../../menu.html" class="btn-module primary" style="width: fit-content; margin-top:20px;">
-                    <i class="fa-solid fa-arrow-left"></i> Volver al Menú
-                </a>
+
+
+
+            <!-- Stats + Nuevo Usuario -->
+            <div class="page-actions">
+                <div class="stats">
+                    <span class="stat-chip"><i class="fa-solid fa-users" style="margin-right:6px; color:#3b82f6;"></i> Total: <strong id="stat-total">0</strong></span>
+                    <span class="stat-chip"><i class="fa-solid fa-circle-check" style="margin-right:6px; color:#10b981;"></i> Activos: <strong id="stat-activos">0</strong></span>
+                </div>
+                <button class="btn-module primary" id="btn-nuevo-usuario" style="padding: 10px 20px;">
+                    <i class="fa-solid fa-user-plus"></i> Nuevo Usuario
+                </button>
             </div>
+
+            <!-- Tabla de usuarios -->
+            <div class="data-table-container" id="users-table-container">
+                <table class="data-table" id="table-users">
+                    <thead>
+                        <tr>
+                            <th>N°</th>
+                            <th>Nombre Completo</th>
+                            <th>Correo Electrónico</th>
+                            <th>Rol</th>
+                            <th>Estado</th>
+                            <th>Fecha Creación</th>
+                            <th style="text-align:center;">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-users"></tbody>
+                </table>
+            </div>
+
+            <!-- Paginación -->
+            <div class="pagination-controls" id="pagination-users"></div>
+
+            <!-- Loading -->
+            <div id="loading-users" style="display:none; text-align:center; padding:40px;">
+                <i class="fa-solid fa-circle-notch fa-spin" style="font-size:24px; color:#3b82f6;"></i>
+                <p style="color:#64748b; margin-top:12px; font-size:14px;">Cargando usuarios...</p>
+            </div>
+
+            <!-- Empty state -->
+            <div id="empty-users" style="display:none; text-align:center; padding:60px 20px;">
+                <i class="fa-solid fa-users-slash" style="font-size:48px; color:#cbd5e1; margin-bottom:16px;"></i>
+                <p style="color:#94a3b8; font-size:15px;">No hay usuarios registrados.</p>
+            </div>
+
         </main>
     </div>
+
+    <!-- MODAL: Crear/Editar Usuario -->
+    <div class="modal-overlay" id="modal-usuario">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-title"><i class="fa-solid fa-user-plus"></i> Nuevo Usuario</h3>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+
+            <div class="modal-error" id="modal-error"></div>
+
+            <form id="form-usuario" autocomplete="off">
+                <div class="modal-form-group">
+                    <label for="input-nombre">Nombre Completo</label>
+                    <input type="text" id="input-nombre" placeholder="Ej: Juan Pérez García" required>
+                </div>
+
+                <div class="modal-form-group" id="group-email">
+                    <label for="input-email">Correo Electrónico</label>
+                    <input type="email" id="input-email" placeholder="usuario@hospital.gob.pe" required>
+                </div>
+
+                <div class="modal-form-group" id="group-password">
+                    <label for="input-password">Contraseña</label>
+                    <div class="password-field-wrapper">
+                        <input type="password" id="input-password" placeholder="Mínimo 6 caracteres" minlength="6" required>
+                        <button type="button" class="password-toggle-modal" id="toggle-pass">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="modal-form-group">
+                    <label for="input-rol">Rol</label>
+                    <select id="input-rol" disabled>
+                        <option value="3" selected>Usuario</option>
+                    </select>
+                </div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="btn-modal-cancel">Cancelar</button>
+                    <button type="submit" class="btn-submit" id="btn-modal-submit">
+                        <i class="fa-solid fa-save"></i>
+                        <span id="btn-submit-text">Crear Usuario</span>
+                        <i class="fa-solid fa-circle-notch fa-spin" id="btn-submit-spinner" style="display:none;"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-notification" id="toast-notification">
+        <i class="fa-solid fa-circle-check" id="toast-icon"></i>
+        <span id="toast-text"></span>
+    </div>
+
     <script src="../../js/supabase-config.js"></script>
     <script src="../../js/layout.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) window.location.href = 'index.html';
-        });
-    </script>
+    <script src="../../js/dynamic-table.js"></script>
+    <script src="../../js/gestion-user.js"></script>
 </body>
 </html>
-

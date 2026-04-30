@@ -19,29 +19,40 @@
             <!-- BARRA DE OPERACIONES ESPECÍFICA DEL MÓDULO -->
             <div class="module-commands">
                 <div style="display: flex; gap: 10px; align-items: center;">
-                    <div class="global-search-box" style="width: 320px; display: flex; align-items: center; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; padding: 0 15px;">
+                    <div class="global-search-box"
+                        style="width: 320px; display: flex; align-items: center; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; padding: 0 15px;">
                         <i class="fa-solid fa-magnifying-glass" style="color: #64748b;"></i>
-                        <input type="text" id="btn-search-dni" placeholder="Buscar registros por DNI..." class="global-search-input" style="border: none; padding: 12px 10px; outline: none; flex: 1; min-width: 0;">
+                        <input type="text" id="btn-search-dni" placeholder="Buscar registros por DNI..."
+                            class="global-search-input"
+                            style="border: none; padding: 12px 10px; outline: none; flex: 1; min-width: 0;">
                         <button id="execute-search" style="display: none;"></button>
                     </div>
-                    <button class="btn-module" id="clear-search" style="display: none; background: #f8fafc; color: #1e293b; border: 1px solid #e2e8f0; padding: 8px 15px;">Limpiar</button>
-                    
-                    <!-- FILTRO POR SERVICIO -->
-                    <div style="display: flex; align-items: center; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
-                        <select id="filter-servicio" style="padding: 10px 15px; border: none; outline: none; border-radius: 8px; background: #ffffff; cursor: pointer; min-width: 200px;">
-                            <option value="">Filtrar por Servicio...</option>
-                        </select>
-                    </div>
-                    <button class="btn-module" id="clear-filter-servicio" style="display: none; background: #f8fafc; color: #1e293b; border: 1px solid #e2e8f0; padding: 8px 15px;">Limpiar Filtro</button>
+ 
+                     <!-- FILTRO POR SERVICIO -->
+                     <div class="global-search-box"
+                         style="width: 250px; display: flex; align-items: center; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; padding: 0 15px; position: relative;">
+                         <i class="fa-solid fa-filter" style="color: #64748b; margin-right: 10px;"></i>
+                         <select id="filter-servicio" class="global-search-input"
+                             style="border: none; padding: 12px 0; outline: none; flex: 1; min-width: 0; appearance: none; -webkit-appearance: none; cursor: pointer; color: #94a3b8; background: transparent;">
+                             <option value="" style="color: #94a3b8;">Filtrar por Servicio</option>
+                         </select>
+                         <i class="fa-solid fa-chevron-down"
+                             style="position: absolute; right: 15px; color: #64748b; font-size: 12px; pointer-events: none;"></i>
+                     </div>
+                     <button class="btn-module btn-clear-hover" id="clear-filter-servicio"
+                         style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 8px 15px; font-weight: 500;">Limpiar
+                         Filtro</button>
                 </div>
-                <button class="btn-module primary action-btn" id="local-new-patient-btn" style="padding: 12px 20px;"><i class="fa-solid fa-plus"></i> Nuevo Paciente</button>
+                <button class="btn-module primary action-btn" id="local-new-patient-btn" style="padding: 12px 20px;"><i
+                        class="fa-solid fa-plus"></i> Nuevo Paciente</button>
             </div>
 
             <!-- LISTA DE PACIENTES -->
             <div id="view-lista" style="margin-top: 20px;">
                 <div class="data-table-container">
                     <!-- LOADING SPINNER -->
-                    <div id="loading-indicator" style="display: none; text-align: center; padding: 40px; color: #3b82f6;">
+                    <div id="loading-indicator"
+                        style="display: none; text-align: center; padding: 40px; color: #3b82f6;">
                         <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem;"></i>
                         <p style="margin-top: 10px; font-weight: 500;">Cargando pacientes...</p>
                     </div>
@@ -49,14 +60,12 @@
                     <table class="data-table" id="table-element">
                         <thead>
                             <tr>
-                                <th>DNI</th>
-                                <th>Paciente</th>
-                                <th>Nº Historia</th>
-                                <th>Fecha Nacim.</th>
-                                <th>Tipo de Seguro</th>
-                                <th>Código Ver.</th>
-                                <th>Servicio</th>
-                                <th>Condición</th>
+                                <th style="text-align: left;">DNI</th>
+                                <th style="text-align: left;">Paciente</th>
+                                <th style="text-align: left;">Nº Historia</th>
+                                <th style="text-align: left;">Tipo de Seguro</th>
+                                <th style="text-align: left;">Servicio</th>
+                                <th style="text-align: left; padding-left: 25px;">Condición</th>
                                 <th style="text-align: center; width: 60px;">Acciones</th>
                             </tr>
                         </thead>
@@ -71,7 +80,8 @@
             <!-- FORMULARIO -->
             <div id="view-form" style="display: none; margin-top: 20px;">
                 <div class="standard-form-container blue-toptag-form">
-                    <h3 style="margin-bottom: 25px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; color: #0f172a; font-size: 20px; font-weight: 700;">
+                    <h3
+                        style="margin-bottom: 25px; border-bottom: 2px solid #e2e8f0; padding-bottom: 15px; color: #0f172a; font-size: 20px; font-weight: 700;">
                         Datos del Nuevo Paciente
                     </h3>
 
@@ -81,35 +91,42 @@
                         <!-- FILA 1: DNI | CÓDIGO VER. | FECHA NAC (3+2+1 -> usamos 2+2+2) -->
                         <div class="input-stacked col-span-2">
                             <label>DNI del Paciente</label>
-                            <input type="text" id="paciente-dni" class="standard-input" maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g, '')" pattern="[0-9]{8}" title="El DNI debe contener exactamente 8 dígitos numéricos" required>
+                            <input type="text" id="paciente-dni" class="standard-input" maxlength="8"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '')" pattern="[0-9]{8}"
+                                title="El DNI debe contener exactamente 8 dígitos numéricos" required>
                         </div>
 
                         <div class="input-stacked col-span-2">
                             <label>Código de Verificación</label>
-                            <input type="text" id="paciente-codigo-ver" class="standard-input" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                            <input type="text" id="paciente-codigo-ver" class="standard-input"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                         </div>
 
                         <!-- FECHA NACIMIENTO -->
                         <div class="input-stacked col-span-2">
                             <label>Fecha de Nacimiento</label>
-                            <input type="text" id="paciente-fecha-nac" class="standard-input" placeholder="dd/mm/aaaa" required>
+                            <input type="text" id="paciente-fecha-nac" class="standard-input" placeholder="dd/mm/aaaa"
+                                required>
                         </div>
 
                         <!-- FILA 2: APELLIDOS | NOMBRES (3+3) -->
                         <div class="input-stacked col-span-3">
                             <label>Apellidos Completos</label>
-                            <input type="text" id="paciente-apellidos" class="standard-input" oninput="this.value = this.value.replace(/[^A-Za-zñÑáéíóúÁÉÍÓÚ\s]/g, '')" required>
+                            <input type="text" id="paciente-apellidos" class="standard-input"
+                                oninput="this.value = this.value.replace(/[^A-Za-zñÑáéíóúÁÉÍÓÚ\s]/g, '')" required>
                         </div>
 
                         <div class="input-stacked col-span-3">
                             <label>Nombres Completos</label>
-                            <input type="text" id="paciente-nombres" class="standard-input" oninput="this.value = this.value.replace(/[^A-Za-zñÑáéíóúÁÉÍÓÚ\s]/g, '')" required>
+                            <input type="text" id="paciente-nombres" class="standard-input"
+                                oninput="this.value = this.value.replace(/[^A-Za-zñÑáéíóúÁÉÍÓÚ\s]/g, '')" required>
                         </div>
 
                         <!-- FILA 3: HC | TIPO SEGURO (2+2) + GRUPO OTROS (2) -->
                         <div class="input-stacked col-span-2">
                             <label>Nº Historia Clínica</label>
-                            <input type="text" id="paciente-hc" class="standard-input hc-input" oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
+                            <input type="text" id="paciente-hc" class="standard-input hc-input"
+                                oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
                         </div>
 
                         <div class="input-stacked col-span-2">
@@ -164,12 +181,16 @@
                             </div>
                         </div>
 
-                        <div class="form-actions" style="grid-column: 1 / -1; display: flex; gap: 15px; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
-                            <button type="button" class="btn-module" id="btn-cancelar" style="background: #f1f5f9; color: #64748b; padding: 12px 25px;">Cancelar</button>
-                            <button type="submit" class="btn-module primary" id="btn-guardar" style="padding: 12px 25px;">
-                                <i class="fa-solid fa-save"></i> 
+                        <div class="form-actions"
+                            style="grid-column: 1 / -1; display: flex; gap: 15px; margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+                            <button type="button" class="btn-module" id="btn-cancelar"
+                                style="background: #f1f5f9; color: #64748b; padding: 12px 25px;">Cancelar</button>
+                            <button type="submit" class="btn-module primary" id="btn-guardar"
+                                style="padding: 12px 25px;">
+                                <i class="fa-solid fa-save"></i>
                                 <span id="guardar-text">Guardar Registro</span>
-                                <i id="guardar-spinner" class="fa-solid fa-circle-notch fa-spin" style="display:none; margin-left:8px;"></i>
+                                <i id="guardar-spinner" class="fa-solid fa-circle-notch fa-spin"
+                                    style="display:none; margin-left:8px;"></i>
                             </button>
                         </div>
                     </form>
@@ -190,6 +211,8 @@
     <script src="https://npmcdn.com/flatpickr/dist/l10n/es.js"></script>
     <script src="../../js/supabase-config.js"></script>
     <script src="../../js/layout.js"></script>
+    <script src="../../js/dynamic-table.js"></script>
     <script src="../../js/registro-pacientes.js"></script>
 </body>
+
 </html>

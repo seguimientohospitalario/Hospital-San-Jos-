@@ -18,6 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let selectedPatients = [];
     let accumulatedResults = [];
+    let crCurrentPage = 1;
+    let crRowsPerPage = 10;
 
     // ── PERSISTENCIA DE RESULTADOS ─────────────────────────────────────────────
     const saveState = () => {
@@ -25,8 +27,21 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     const restoreState = () => {
         try {
+            // Restaurar inputs
+            const savedDNI = sessionStorage.getItem('cr_filter_dni');
+            const savedHC = sessionStorage.getItem('cr_filter_hc');
+            const savedApellidos = sessionStorage.getItem('cr_filter_apellidos');
+
+            if (savedDNI) inputDNI.value = savedDNI;
+            if (savedHC) inputHC.value = savedHC;
+            if (savedApellidos) inputApellidos.value = savedApellidos;
+
+            // Restaurar tabla
             const saved = sessionStorage.getItem('cr_accumulated');
             if (saved) { accumulatedResults = JSON.parse(saved); renderAccumulatedTable(); }
+
+            // Si hay filtros pero no resultados, podrías auto-cargar, 
+            // pero el usuario pidió que se mantengan los filtros si cambia de pantalla.
         } catch {}
     };
 
@@ -52,11 +67,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (selectedPatients.length > 0 && selectedPatients.length <= 2) {
             btnValidar.disabled = false;
             btnValidar.style.cursor = 'pointer';
-            btnValidar.style.opacity = '1';
         } else {
             btnValidar.disabled = true;
             btnValidar.style.cursor = 'not-allowed';
-            btnValidar.style.opacity = '0.6';
         }
     };
 
@@ -75,16 +88,77 @@ document.addEventListener('DOMContentLoaded', () => {
         updateActionsBar();
     };
 
+    // ── HELPER: obtener clase CSS del badge según estado ─────────────────────
+    const getBadgeClass = (estado) => {
+        if (!estado || estado === 'N/A') return 'badge-na';
+        const s = estado.toUpperCase();
+        if (s === 'OK' || s === 'CORRECTO') return 'badge-ok';
+        if (s === 'ALERTA') return 'badge-alerta';
+        if (s === 'ERROR') return 'badge-error';
+        if (s === 'EN PROCESO') return 'badge-na';
+        return 'badge-na';
+    };
+
+    // ── BANNER DE ALERTA GLOBAL (debajo del encabezado) ──────────────────────
+    const updateAlertaBanner = () => {
+        const hasAlerta = accumulatedResults.some(p => p.estado_validacion === 'ALERTA');
+        let banner = document.getElementById('rpa-alerta-banner');
+
+        if (hasAlerta) {
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.id = 'rpa-alerta-banner';
+                banner.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> Realizar cambio de cobertura, Alta Administrativa';
+                // Insertar debajo del encabezado de la página (page-header)
+                const pageHeader = document.querySelector('.page-header');
+                if (pageHeader && pageHeader.nextSibling) {
+                    pageHeader.parentNode.insertBefore(banner, pageHeader.nextSibling);
+                } else {
+                    const pageContent = document.getElementById('page-content');
+                    if (pageContent) {
+                        const searchFilters = pageContent.querySelector('.search-filters-container');
+                        if (searchFilters) pageContent.insertBefore(banner, searchFilters);
+                        else pageContent.appendChild(banner);
+                    }
+                }
+            }
+            banner.classList.add('show');
+        } else {
+            if (banner) banner.classList.remove('show');
+        }
+    };
+
     const renderAccumulatedTable = () => {
         tbodyPacientes.innerHTML = '';
         if (accumulatedResults.length === 0) {
             tablePacientes.style.display = 'none';
             actionsBar.style.display = 'none';
+            updateAlertaBanner();
+            document.getElementById('pagination-consulta').innerHTML = '';
             return;
         }
 
-        accumulatedResults.forEach(p => {
+        // Calculate dynamic rows per page
+        if (typeof DynamicTable !== 'undefined') {
+            crRowsPerPage = DynamicTable.calcRowsPerPage({
+                tableContainerId: 'view-resultados',
+                excludeSelectors: ['.top-header', '.page-header', '.search-filters-container', '#actions-bar', '.pagination-controls', '#rpa-alerta-banner']
+            });
+        }
+
+        const totalPages = Math.ceil(accumulatedResults.length / crRowsPerPage) || 1;
+        if (crCurrentPage > totalPages) crCurrentPage = totalPages;
+
+        const start = (crCurrentPage - 1) * crRowsPerPage;
+        const pageData = accumulatedResults.slice(start, start + crRowsPerPage);
+
+        pageData.forEach(p => {
             const tr = document.createElement('tr');
+
+            // Sombrear fila si el paciente tiene estado ALERTA
+            if (p.estado_validacion === 'ALERTA') {
+                tr.classList.add('row-alerta');
+            }
 
             // Checkbox td
             const tdCheck = document.createElement('td');
@@ -98,7 +172,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chk.addEventListener('change', (e) => handleCheckboxChange(e, p));
             tdCheck.appendChild(chk);
 
-            const badgeClass = p.estado_validacion === 'OK' ? 'badge-ok' : (p.estado_validacion === 'ALERTA' ? 'badge-alerta' : 'badge-na');
+            const badgeClass = getBadgeClass(p.estado_validacion);
 
             // Formatear fecha para mostrar en la tabla
             let nacFormateada = p.fecha_nacimiento || 'N/A';
@@ -112,14 +186,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            // Determinar si el botón de acción debe ser visible (ya fue validado)
+            const hasValidation = p.estado_validacion && p.estado_validacion !== 'N/A';
+            const btnDisplay = hasValidation ? 'inline-block' : 'none';
+
+            // Renderizar la celda de "Seguro Extraído" con estilo de error si aplica
+            let extCellHTML = p.tipo_seguro_validado || '-';
+            const estadoUpper = (p.estado_validacion || '').toUpperCase();
+            if (estadoUpper === 'ERROR' && p.tipo_seguro_validado) {
+                extCellHTML = `<span style="color: #ef4444; font-size: 12px;"><i class="fa-solid fa-circle-xmark"></i> ${p.tipo_seguro_validado}</span>`;
+            } else if (estadoUpper === 'ALERTA' && p.tipo_seguro_validado && !p.tipo_seguro_validado.includes('COBERTURA')) {
+                extCellHTML = `<span style="color: #d97706; font-size: 12px;"><i class="fa-solid fa-triangle-exclamation"></i> ${p.tipo_seguro_validado}</span>`;
+            }
+
             tr.innerHTML = `
                 <td>${p.dni} <br><small style="color:#64748b;">CUI: ${p.codigo_verificacion || 'N/A'}</small></td>
-                <td><strong>${p.apellidos}</strong>, ${p.nombres} <br><small style="color:#64748b;">Nac: ${nacFormateada}</small></td>
+                <td>${p.apellidos}, ${p.nombres} <br><small style="color:#64748b;">Nac: ${nacFormateada}</small></td>
                 <td style="font-weight: 600;">${p.tipo_seguro || 'NO DECLARADO'}</td>
-                <td id="ext-${p.id}" style="color: #475569;">${p.tipo_seguro_validado || '-'}</td>
+                <td id="ext-${p.id}" style="color: #475569;">${extCellHTML}</td>
                 <td id="badge-${p.id}"><span class="${badgeClass}">${p.estado_validacion || 'N/A'}</span></td>
                 <td style="text-align:center;">
-                    <button id="btn-redirect-${p.id}" style="display:none; background:#3b82f6; color:white; border:none; border-radius:6px; padding:6px 10px; cursor:pointer; font-size:13px;" title="Ver registro del paciente">
+                    <button id="btn-redirect-${p.id}" style="display:${btnDisplay}; background:#3b82f6; color:white; border:none; border-radius:6px; padding:6px 10px; cursor:pointer; font-size:13px;" title="Ver registro del paciente">
                         <i class="fa-solid fa-arrow-up-right-from-square"></i>
                     </button>
                 </td>
@@ -140,7 +227,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
         tablePacientes.style.display = 'table';
         actionsBar.style.display = 'flex';
+        updateAlertaBanner();
+
+        // Render pagination
+        if (typeof DynamicTable !== 'undefined') {
+            DynamicTable.renderPagination({
+                containerId: 'pagination-consulta',
+                currentPage: crCurrentPage,
+                totalPages,
+                onPageChange: (page) => { crCurrentPage = page; renderAccumulatedTable(); }
+            });
+        }
     };
+
+    // Recalculate rows on resize (debounced)
+    if (typeof DynamicTable !== 'undefined') {
+        DynamicTable.onResize(() => {
+            if (accumulatedResults.length > 0) renderAccumulatedTable();
+        });
+    }
 
     const loadPacientes = async () => {
         const dni = inputDNI.value.trim();
@@ -197,11 +302,6 @@ document.addEventListener('DOMContentLoaded', () => {
         updateActionsBar();
 
         renderAccumulatedTable();
-
-        // Limpiar filtros tras la búsqueda (tabla permanece visible)
-        inputDNI.value = '';
-        inputHC.value = '';
-        inputApellidos.value = '';
     };
 
     btnSearch.addEventListener('click', loadPacientes);
@@ -226,6 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
         selectedPatients = [];
         accumulatedResults = [];
         updateActionsBar();
+        renderAccumulatedTable();
     });
 
     btnValidar.addEventListener('click', async () => {
@@ -276,23 +377,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (result.success) {
                     const extraido = result.tipo_seguro_extraido || 'SIN RESULTADOS';
                     let estadoVal = 'ALERTA';
-                    let badgeClass = 'badge-alerta';
 
                     if (extraido === 'NO TIENE DERECHO DE COBERTURA') {
                         // Resultado válido del sistema EsSalud → CORRECTO
                         estadoVal = 'CORRECTO';
-                        badgeClass = 'badge-ok';
                     } else if (paciente.tipo_seguro && extraido !== 'SIN RESULTADOS') {
                         if (extraido.toUpperCase().includes(paciente.tipo_seguro.toUpperCase()) ||
                             paciente.tipo_seguro.toUpperCase().includes(extraido.toUpperCase())) {
                             estadoVal = 'OK';
-                            badgeClass = 'badge-ok';
                         }
                     }
+
+                    const badgeClass = getBadgeClass(estadoVal);
 
                     // Actualizar UI
                     extCell.textContent = extraido;
                     badgeCell.innerHTML = `<span class="${badgeClass}">${estadoVal}</span>`;
+
+                    // Sombrear fila si es ALERTA
+                    const row = extCell.closest('tr');
+                    if (row) {
+                        row.classList.toggle('row-alerta', estadoVal === 'ALERTA');
+                    }
 
                     // Actualizar objeto en accumulatedResults para persistencia
                     const idx = accumulatedResults.findIndex(r => r.id === paciente.id);
@@ -301,7 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         accumulatedResults[idx].estado_validacion = estadoVal;
                     }
 
-                    // Guardar en BD
+                    // Guardar en BD (Formato ISO para Supabase)
                     await supabaseClient.from('pacientes').update({
                         tipo_seguro_validado: extraido,
                         estado_validacion: estadoVal,
@@ -310,20 +416,56 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     successCount++;
                 } else {
+                    let estadoError = 'ERROR';
+                    let errorDisplayMsg = 'Datos incorrectos o paciente no encontrado';
                     if (result.error === 'CAPTCHA_REQUIRED') {
-                        extCell.innerHTML = '<span style="color: #ef4444; font-size: 12px;"><i class="fa-solid fa-triangle-exclamation"></i> Requiere Validar Captcha Manual</span>';
-                        badgeCell.innerHTML = '<span class="badge-alerta">ALERTA</span>';
+                        errorDisplayMsg = 'Requiere Validar Captcha Manual';
+                        extCell.innerHTML = `<span style="color: #d97706; font-size: 12px;"><i class="fa-solid fa-triangle-exclamation"></i> ${errorDisplayMsg}</span>`;
+                        estadoError = 'ALERTA';
                     } else {
-                        // Limpiar mensaje de error para evitar que UI explote con trazas HTML
-                        const errorMsg = 'Datos incorrectos o paciente no encontrado';
-                        extCell.innerHTML = `<span style="color: #ef4444; font-size: 12px;"><i class="fa-solid fa-circle-xmark"></i> ${errorMsg}</span>`;
-                        badgeCell.innerHTML = '<span class="badge-alerta">ERROR</span>';
+                        extCell.innerHTML = `<span style="color: #ef4444; font-size: 12px;"><i class="fa-solid fa-circle-xmark"></i> ${errorDisplayMsg}</span>`;
                     }
+                    badgeCell.innerHTML = `<span class="${getBadgeClass(estadoError)}">${estadoError}</span>`;
+
+                    // Sombrear fila si es ALERTA
+                    const row = extCell.closest('tr');
+                    if (row) {
+                        row.classList.toggle('row-alerta', estadoError === 'ALERTA');
+                    }
+
+                    // Persistir estado y mensaje de error para sessionStorage
+                    const idx = accumulatedResults.findIndex(r => r.id === paciente.id);
+                    if (idx !== -1) {
+                        accumulatedResults[idx].estado_validacion = estadoError;
+                        accumulatedResults[idx].tipo_seguro_validado = errorDisplayMsg;
+                    }
+
+                    // GUARDAR ERROR/ALERTA EN BD TAMBIÉN
+                    await supabaseClient.from('pacientes').update({
+                        tipo_seguro_validado: errorDisplayMsg,
+                        estado_validacion: estadoError,
+                        fecha_ultima_validacion: new Date().toISOString()
+                    }).eq('id', paciente.id);
                 }
             } catch (err) {
                 console.error("Fetch error:", err);
-                extCell.innerHTML = `<span style="color: #ef4444; font-size: 12px;">Error de conexión RPA</span>`;
-                badgeCell.innerHTML = '<span class="badge-alerta">ERROR</span>';
+                const catchMsg = 'Error de conexión RPA';
+                extCell.innerHTML = `<span style="color: #ef4444; font-size: 12px;"><i class="fa-solid fa-circle-xmark"></i> ${catchMsg}</span>`;
+                badgeCell.innerHTML = `<span class="${getBadgeClass('ERROR')}">ERROR</span>`;
+
+                // Persistir estado y mensaje de error para sessionStorage
+                const idx = accumulatedResults.findIndex(r => r.id === paciente.id);
+                if (idx !== -1) {
+                    accumulatedResults[idx].estado_validacion = 'ERROR';
+                    accumulatedResults[idx].tipo_seguro_validado = catchMsg;
+                }
+
+                // GUARDAR FALLO DE CONEXIÓN EN BD TAMBIÉN
+                await supabaseClient.from('pacientes').update({
+                    tipo_seguro_validado: catchMsg,
+                    estado_validacion: 'ERROR',
+                    fecha_ultima_validacion: new Date().toISOString()
+                }).eq('id', paciente.id);
             }
 
             // Mostrar botón de redirección siempre tras completar el RPA del paciente
@@ -345,6 +487,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Persistir resultados para que al volver al módulo sigan visibles
         saveState();
+        updateAlertaBanner();
 
         if (successCount > 0) showToast(`Validación completada (${successCount} procesados)`);
     });

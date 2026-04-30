@@ -19,10 +19,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const sidebarHTML = `
         <div class="sidebar-header">
-            <img src="${bp}img/logotipo_transparent.png" alt="Logo MINSA" class="sidebar-logo">
-            <div class="sidebar-header-text">
-                <h2>Hospital San José</h2>
-                <p>Unidad de Seguros (SIS)</p>
+            <div class="sidebar-header-top">
+                <img src="${bp}img/logotipo_transparent.png" alt="Logo MINSA" class="sidebar-logo">
+                <div class="sidebar-header-text">
+                    <h2>Hospital San José</h2>
+                    <p>Unidad de Seguros (SIS)</p>
+                </div>
             </div>
         </div>
         <hr class="sidebar-divider">
@@ -45,12 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
             </div>
 
-            <div class="nav-item ${currentPage === 'tramite.html' ? 'active' : ''}">
-                <a href="${bp}modulos/tramite/tramite.html" class="nav-link">
-                    <i class="fa-solid fa-file-signature"></i>
-                    <span>Trámite Documentario</span>
-                </a>
-            </div>
+
 
             <div class="nav-item ${currentPage === 'registro-pacientes.html' ? 'active' : ''}">
                 <a href="${bp}modulos/pacientes/registro-pacientes.html" class="nav-link">
@@ -109,7 +106,26 @@ document.addEventListener('DOMContentLoaded', () => {
             <button type="button" id="sidebar-toggle-btn" class="sidebar-toggle-btn" aria-label="Abrir menú" aria-expanded="false" title="Menú">
                 <i class="fa-solid fa-bars"></i>
             </button>
-            <h1 class="welcome-text">Bienvenido</h1>
+            <h1 class="welcome-text">
+                ${(() => {
+                    if (currentPage === 'menu.html') {
+                        return '<span class="welcome-dark">BIENVENIDO A LA </span><span class="welcome-celeste">PANTALLA PRINCIPAL</span>';
+                    } else if (currentPage === 'gestion-admin.html') {
+                        return '<span class="welcome-dark">GESTIÓN DE </span><span class="welcome-celeste">ADMINISTRADORES</span>';
+                    } else if (currentPage === 'gestion-user.html') {
+                        return '<span class="welcome-dark">GESTIÓN DE </span><span class="welcome-celeste">USUARIOS</span>';
+                    } else if (currentPage === 'registro-pacientes.html') {
+                        return '<span class="welcome-dark">REGISTRO DE </span><span class="welcome-celeste">NUEVOS PACIENTES</span>';
+                    } else if (currentPage === 'seguimiento-pacientes.html' || currentPage === 'verificacion-paciente.html' || currentPage === 'detalle-paciente.html') {
+                        return '<span class="welcome-dark">BÚSQUEDA / VERIFICACIÓN / </span><span class="welcome-celeste">ACTUALIZACIÓN</span>';
+                    } else if (currentPage === 'consulta-rapida.html' || currentPage === 'consulta-masiva.html' || currentPage === 'validacion-global.html') {
+                        return '<span class="welcome-dark">CONSULTA A WEB </span><span class="welcome-celeste">DONDE ME ATIENDO</span>';
+                    } else if (currentPage === 'reportes.html') {
+                        return '<span class="welcome-dark">EXCEL / </span><span class="welcome-celeste">PDF</span>';
+                    }
+                    return '<span class="welcome-dark">BIENVENIDO</span>';
+                })()}
+            </h1>
         </div>
         <div class="header-right">
             <div class="profile-dropdown">

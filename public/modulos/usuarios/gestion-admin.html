@@ -7,27 +7,93 @@
     <link rel="stylesheet" href="../../css/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="stylesheet" href="../../css/gestion-usuarios.css">
 </head>
 <body>
     <div class="main-wrapper">
         <main class="page-content" id="page-content">
-            <div class="module-card">
-                <h3>Vista en desarrollo</h3>
-                <p>Contenido del módulo de gestión administrativa irá aquí.</p>
-                <a href="../../menu.html" class="btn-module primary" style="width: fit-content; margin-top:20px;">
-                    <i class="fa-solid fa-arrow-left"></i> Volver al Menú
-                </a>
+
+
+            <div class="page-actions">
+                <div class="stats">
+                    <span class="stat-chip"><i class="fa-solid fa-user-shield" style="margin-right:6px; color:#7c3aed;"></i> Admins: <strong id="stat-total">0</strong></span>
+                    <span class="stat-chip"><i class="fa-solid fa-circle-check" style="margin-right:6px; color:#10b981;"></i> Activos: <strong id="stat-activos">0</strong></span>
+                </div>
+                <button class="btn-module primary" id="btn-nuevo-admin" style="padding: 10px 20px; background: #3b82f6;">
+                    <i class="fa-solid fa-user-plus"></i> Nuevo Registro
+                </button>
+            </div>
+            <div class="data-table-container" id="admins-table-container">
+                <table class="data-table" id="table-admins">
+                    <thead><tr>
+                        <th>N°</th><th>Nombre Completo</th><th>Correo Electrónico</th><th>Rol</th><th>Estado</th><th>Fecha Creación</th><th style="text-align:center;">Acciones</th>
+                    </tr></thead>
+                    <tbody id="tbody-admins"></tbody>
+                </table>
+            </div>
+            <div class="pagination-controls" id="pagination-admins"></div>
+            <div id="loading-admins" style="display:none; text-align:center; padding:40px;">
+                <i class="fa-solid fa-circle-notch fa-spin" style="font-size:24px; color:#7c3aed;"></i>
+                <p style="color:#64748b; margin-top:12px; font-size:14px;">Cargando administradores...</p>
+            </div>
+            <div id="empty-admins" style="display:none; text-align:center; padding:60px 20px;">
+                <i class="fa-solid fa-user-shield" style="font-size:48px; color:#cbd5e1; margin-bottom:16px;"></i>
+                <p style="color:#94a3b8; font-size:15px;">No hay administradores registrados.</p>
             </div>
         </main>
     </div>
+
+    <!-- MODAL -->
+    <div class="modal-overlay" id="modal-admin">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3 id="modal-title"><i class="fa-solid fa-user-shield"></i> Nuevo Administrador</h3>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-error" id="modal-error"></div>
+            <form id="form-admin" autocomplete="off">
+                <div class="modal-form-group">
+                    <label for="input-nombre">Nombre Completo</label>
+                    <input type="text" id="input-nombre" placeholder="Ej: María López Torres" required>
+                </div>
+                <div class="modal-form-group" id="group-email">
+                    <label for="input-email">Correo Electrónico</label>
+                    <input type="email" id="input-email" placeholder="admin@hospital.gob.pe" required>
+                </div>
+                <div class="modal-form-group" id="group-password">
+                    <label for="input-password">Contraseña</label>
+                    <div class="password-field-wrapper">
+                        <input type="password" id="input-password" placeholder="Mínimo 6 caracteres" minlength="6" required>
+                        <button type="button" class="password-toggle-modal" id="toggle-pass"><i class="fa-solid fa-eye"></i></button>
+                    </div>
+                </div>
+                <div class="modal-form-group">
+                    <label for="input-rol">Rol</label>
+                    <select id="input-rol" required>
+                        <option value="2">Administrador</option>
+                        <option value="3">Usuario Normal</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn-cancel" id="btn-modal-cancel">Cancelar</button>
+                    <button type="submit" class="btn-submit" id="btn-modal-submit" style="background:#3b82f6;">
+                        <i class="fa-solid fa-save"></i>
+                        <span id="btn-submit-text">Crear Registro</span>
+                        <i class="fa-solid fa-circle-notch fa-spin" id="btn-submit-spinner" style="display:none;"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="toast-notification" id="toast-notification">
+        <i class="fa-solid fa-circle-check" id="toast-icon"></i>
+        <span id="toast-text"></span>
+    </div>
+
     <script src="../../js/supabase-config.js"></script>
     <script src="../../js/layout.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', async () => {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            if (!session) window.location.href = 'index.html';
-        });
-    </script>
+    <script src="../../js/dynamic-table.js"></script>
+    <script src="../../js/gestion-admin.js"></script>
 </body>
 </html>
-

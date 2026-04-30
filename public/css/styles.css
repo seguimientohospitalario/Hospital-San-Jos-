@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@200;300;400;500;600;700;800&display=swap');
+
 /* RESET */
 * {
     box-sizing: border-box;
@@ -320,27 +322,41 @@ body {
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    padding-top: 25px;
+    padding-top: 0; /* Subido para alinear con header */
 }
 
 .sidebar-header {
-    padding: 0 25px;
+    padding: 25px 20px 20px; /* Top 25px para coincidir con top-header */
     text-align: left;
+}
+
+.sidebar-header-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sidebar-logo {
+    width: 42px;
+    height: auto;
+    object-fit: contain;
 }
 
 .sidebar-header h2 {
     color: #1e293b;
-    font-size: 19px;
+    font-size: 15px;
     font-weight: 700;
-    margin-bottom: 6px;
+    margin: 0;
     line-height: 1.2;
 }
 
 .sidebar-header p {
     color: #64748b;
-    font-size: 13px;
+    font-size: 11px;
     font-weight: 500;
+    margin: 0;
 }
+
 
 .sidebar-divider {
     border: 0;
@@ -453,7 +469,30 @@ body {
     display: flex;
     align-items: center;
     flex: 1;
-    max-width: 500px;
+    max-width: 800px;
+}
+
+.welcome-text {
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 18px !important;
+    margin: 0;
+    line-height: 1;
+    white-space: nowrap;
+    text-transform: uppercase;
+    text-shadow: none !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.welcome-text .welcome-dark {
+    color: #0D0D0D;
+    letter-spacing: 0.02em;
+    font-weight: 400 !important;
+}
+
+.welcome-text .welcome-celeste {
+    color: #3b82f6;
+    font-weight: 600 !important;
 }
 
 .global-search-box {
@@ -715,6 +754,47 @@ body {
 .btn-module:hover {
     background: #e2e8f0;
     color: #2563eb;
+}
+
+/* Efecto de sombra para botones Limpiar (Usabilidad) */
+.btn-clear-hover:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
+    background: #f8fafc !important;
+}
+
+/* Efecto de sombra para botones Limpiar (Usabilidad) */
+.btn-clear-hover:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    transform: translateY(-1px);
+    background: #f8fafc !important;
+}
+
+/* Estilo Negro/Gris Mate con Iluminación de Texto */
+.btn-matte-black {
+    background: #404040 !important;
+    color: #808080 !important; /* Texto apagado por defecto */
+    border: none !important;
+    transition: all 0.4s ease;
+    font-weight: 600;
+}
+
+.btn-matte-black:not(:disabled) {
+    color: #ffffff !important; /* El texto se "ilumina" */
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.3); /* Efecto de resplandor suave */
+    cursor: pointer;
+}
+
+.btn-matte-black:hover:not(:disabled) {
+    background: #4a4a4a !important; /* Un cambio de fondo casi imperceptible */
+    text-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+    transform: translateY(-1px);
+}
+
+.btn-matte-black:disabled {
+    color: #808080 !important;
+    opacity: 1 !important;
+    cursor: not-allowed;
 }
 
 .btn-module.primary {

@@ -1,0 +1,196 @@
+/* =========================================================
+   Gestión de Usuarios — Estilos compartidos
+   ========================================================= */
+
+/* Modal overlay */
+.modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    backdrop-filter: blur(4px);
+    z-index: 9000;
+    display: none; align-items: center; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+
+.modal-card {
+    background: #ffffff; border-radius: 16px; padding: 32px;
+    width: 100%; max-width: 520px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    animation: slideUp 0.3s ease;
+    max-height: 90vh; overflow-y: auto;
+}
+@keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;
+}
+.modal-header h3 {
+    font-size: 18px; font-weight: 700; color: #1e293b;
+    display: flex; align-items: center; gap: 10px;
+}
+.modal-close {
+    background: none; border: none; font-size: 20px; color: #94a3b8;
+    cursor: pointer; padding: 4px; border-radius: 6px; transition: all 0.2s;
+}
+.modal-close:hover { color: #ef4444; background: #fef2f2; }
+
+.modal-form-group { margin-bottom: 18px; }
+.modal-form-group label {
+    display: block; font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 6px;
+}
+.modal-form-group input,
+.modal-form-group select {
+    width: 100%; padding: 11px 14px; font-size: 14px;
+    border: 1px solid #e2e8f0; border-radius: 8px; outline: none;
+    background: #f8fafc; color: #1e293b; transition: all 0.2s;
+    box-sizing: border-box;
+}
+.modal-form-group input:focus,
+.modal-form-group select:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    background: #fff;
+}
+
+.modal-actions {
+    display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;
+}
+.btn-cancel {
+    padding: 10px 20px; background: #f1f5f9; color: #64748b;
+    border: 1px solid #e2e8f0; border-radius: 8px;
+    font-weight: 600; font-size: 14px; cursor: pointer; transition: all 0.2s;
+}
+.btn-cancel:hover { background: #e2e8f0; }
+
+.btn-submit {
+    padding: 10px 24px; background: #3b82f6; color: #fff; border: none;
+    border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer;
+    transition: all 0.2s; display: flex; align-items: center; gap: 8px;
+}
+.btn-submit:hover { background: #2563eb; }
+.btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Status badges */
+.badge-activo {
+    background: rgba(16,185,129,0.12); color: #059669;
+    padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700;
+}
+.badge-inactivo {
+    background: rgba(239,68,68,0.12); color: #dc2626;
+    padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700;
+}
+
+/* Role badges */
+.badge-role-dev {
+    background: rgba(139,92,246,0.12); color: #7c3aed;
+    padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700;
+}
+.badge-role-admin {
+    background: rgba(59,130,246,0.12); color: #2563eb;
+    padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700;
+}
+.badge-role-user {
+    background: rgba(148,163,184,0.15); color: #64748b;
+    padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700;
+}
+
+/* Action buttons */
+.btn-table-action {
+    background: none; border: none; cursor: pointer;
+    padding: 6px 8px; border-radius: 6px; font-size: 14px; transition: all 0.2s;
+}
+.btn-table-action.edit { color: #3b82f6; }
+.btn-table-action.edit:hover { background: rgba(59,130,246,0.1); }
+.btn-table-action.toggle { color: #64748b; }
+.btn-table-action.toggle:hover { background: rgba(100, 116, 139, 0.1); }
+.btn-table-action.activate { color: #10b981; }
+.btn-table-action.activate:hover { background: rgba(16,185,129,0.1); }
+
+/* Page actions header */
+.page-actions {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px; flex-wrap: wrap; gap: 12px;
+}
+.page-actions .stats { display: flex; gap: 16px; align-items: center; }
+
+.stat-chip {
+    background: #f1f5f9; padding: 6px 14px; border-radius: 8px;
+    font-size: 13px; color: #475569; font-weight: 500;
+}
+.stat-chip strong { color: #1e293b; }
+
+/* Toast */
+.toast-notification {
+    position: fixed; bottom: 24px; right: 24px;
+    background: #1e293b; color: #fff; padding: 14px 24px;
+    border-radius: 10px; font-size: 14px; font-weight: 500;
+    z-index: 10000; display: none; align-items: center; gap: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+.toast-notification.show { display: flex; }
+.toast-notification.error { background: #dc2626; }
+.toast-notification.success { background: #059669; }
+
+/* Password wrapper */
+.password-field-wrapper { position: relative; }
+.password-field-wrapper input { padding-right: 40px; }
+.password-toggle-modal {
+    position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer; color: #94a3b8; font-size: 15px;
+}
+
+/* Modal error */
+.modal-error {
+    background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2);
+    color: #dc2626; padding: 10px 14px; border-radius: 8px;
+    font-size: 13px; margin-bottom: 16px; display: none;
+}
+.modal-error.show { display: block; }
+
+/* Dev-only notice */
+.dev-notice {
+    background: rgba(139,92,246,0.06); border: 1px solid rgba(139,92,246,0.2);
+    border-left: 4px solid #7c3aed; border-radius: 8px;
+    padding: 12px 18px; color: #6d28d9; font-size: 13px;
+    font-weight: 500; margin-bottom: 20px;
+    display: flex; align-items: center; gap: 10px;
+}
+/* ESTILIZACION TABLA DATOS (Estandarizado con Registro Pacientes) */
+.data-table-container {
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    overflow-x: auto;
+    border: 1px solid #e2e8f0;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table thead th {
+    background: #f8fafc;
+    color: #64748b;
+    font-weight: 600;
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #e2e8f0;
+    white-space: nowrap;
+    font-size: 13px;
+}
+
+.data-table tbody td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+    vertical-align: middle;
+    font-size: 13px;
+}
+
+.data-table tbody tr:hover {
+    background: #f8fafc;
+}

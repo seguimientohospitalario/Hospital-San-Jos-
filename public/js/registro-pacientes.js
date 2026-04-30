@@ -28,7 +28,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const tbody = document.getElementById('tabla-pacientes');
     const btnSearchDni = document.getElementById('btn-search-dni');
     const btnExecSearch = document.getElementById('execute-search');
-    const btnClearSearch = document.getElementById('clear-search');
     const loadingIndicator = document.getElementById('loading-indicator');
     const tableElement = document.getElementById('table-element');
     
@@ -41,6 +40,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const normalizeText = (text) => {
         if (!text) return '';
         return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+    };
+
+    // Auxiliar para seleccionar valor en un select ignorando mayúsculas/minúsculas
+    const setSelectValueCaseInsensitive = (selectElement, value) => {
+        if (!selectElement || !value) return;
+        const normalizedValue = value.toString().trim().toUpperCase();
+        for (let i = 0; i < selectElement.options.length; i++) {
+            const optValue = selectElement.options[i].value.trim().toUpperCase();
+            const optText = selectElement.options[i].text.trim().toUpperCase();
+            if (optValue === normalizedValue || optText === normalizedValue) {
+                selectElement.selectedIndex = i;
+                return;
+            }
+        }
     };
 
     // Inicializar Flatpickr con m\u00e1scara autom\u00e1tica dd/mm/yyyy
@@ -121,7 +134,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (sessionStorage.getItem('rp_filter_servicio')) {
                 filterServicio.value = sessionStorage.getItem('rp_filter_servicio');
                 filterQuery = filterServicio.value;
-                btnClearFilterServicio.style.display = 'block';
+                filterServicio.style.color = "#1e293b";
+            } else {
+                filterServicio.style.color = "#94a3b8";
             }
         } catch (error) {
             console.error('Error cargando servicios:', error.message);
@@ -136,10 +151,16 @@ document.addEventListener('DOMContentLoaded', async () => {
             loadingIndicator.style.display = 'block';
             tableElement.style.display = 'none';
 
-            // Cálculo Matemático (altura adaptativa)
-            const availableHeight = window.innerHeight - 350;
-            let calculatedRows = Math.floor(availableHeight / 60);
-            rowsPerPage = calculatedRows > 2 ? calculatedRows : 3;
+            // Cálculo Matemático (altura adaptativa) usando utilidad global
+            if (typeof DynamicTable !== 'undefined') {
+                rowsPerPage = DynamicTable.calcRowsPerPage({
+                    excludeSelectors: ['.top-header', '.module-commands', '.pagination-controls']
+                });
+            } else {
+                const availableHeight = window.innerHeight - 350;
+                let calculatedRows = Math.floor(availableHeight / 60);
+                rowsPerPage = calculatedRows > 2 ? calculatedRows : 3;
+            }
 
             const startRange = (currentPage - 1) * rowsPerPage;
             const endRange = startRange + rowsPerPage - 1;
@@ -156,14 +177,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             if (filterQuery) {
-                queryObj = queryObj.eq('servicio', filterQuery);
+                // Usamos ilike y aseguramos mayúsculas para coincidir con el Trigger de la DB
+                queryObj = queryObj.ilike('servicio', filterQuery.toUpperCase());
             }
 
             const { data, count, error } = await queryObj;
 
             if (error) throw error;
             totalRecords = count || 0;
-            renderTable(data);
+            renderTable(data, startRange);
             renderPagination();
         } catch (error) {
             console.error('Error cargando pacientes:', error.message);
@@ -174,39 +196,49 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const getCondicionClass = (condicion) => {
-        if (condicion === 'Hospitalizado') return 'cond-hospitalizado';
-        if (condicion === 'Alta' || condicion === 'Salió de Alta') return 'cond-alta';
-        if (condicion === 'Fallecido') return 'cond-fallecido';
-        return '';
+        if (!condicion) return '';
+        const c = condicion.trim().toUpperCase();
+        if (c === 'HOSPITALIZADO') return 'cond-hospitalizado';
+        if (c === 'ALTA') return 'cond-alta';
+        if (c === 'FALLECIDO' || c === 'FALLECE') return 'cond-fallecido';
+        return 'cond-cambio';
     };
 
-    const renderTable = (items) => {
+    const renderTable = (items, startIndex = 0) => {
         tbody.innerHTML = '';
         if (!items || items.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 30px; color:#94a3b8;">No se encontraron registros.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 40px; color:#94a3b8; font-size: 15px;">No se encontraron registros.</td></tr>`;
             return;
         }
 
-        items.forEach(item => {
+        items.forEach((item, idx) => {
             const row = document.createElement('tr');
             const condClass = getCondicionClass(item.condicion);
             
+            // Peru Time for display
+            let fechaNacDisplay = item.fecha_nacimiento;
+            if (item.fecha_nacimiento && item.fecha_nacimiento.includes('-')) {
+                // Si viene YYYY-MM-DD
+                const parts = item.fecha_nacimiento.split('-');
+                fechaNacDisplay = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+
             row.innerHTML = `
-                <td><strong>${item.dni}</strong></td>
-                <td>${item.apellidos}, ${item.nombres}</td>
-                <td>${item.historia_clinica}</td>
-                <td>${item.fecha_nacimiento}</td>
-                <td><span class="seguro-badge">${item.tipo_seguro}</span></td>
-                <td>${item.codigo_verificacion || '-'}</td>
+                <td style="font-weight: 700; color: #1e293b;">${item.dni}</td>
+                <td style="color: #475569;">${item.apellidos}, ${item.nombres}</td>
+                <td style="color: #475569;">${item.historia_clinica}</td>
+                <td><span class="seguro-badge-text">${item.tipo_seguro}</span></td>
                 <td>${item.servicio || '-'}</td>
-                <td><span class="condicion-badge ${condClass}">${item.condicion}</span></td>
-                <td style="text-align: center; display: flex; justify-content: center; gap: 8px;">
-                    <button class="action-btn-edit local-edit-btn" data-id="${item.id}" title="Editar Paciente">
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
-                    <button class="action-btn-edit local-rpa-btn" data-dni="${item.dni}" title="Ejecutar Consulta RPA" style="color: #3b82f6;">
-                        <i class="fa-solid fa-clipboard-check"></i>
-                    </button>
+                <td style="text-align: left;"><span class="condicion-badge ${condClass}">${(item.condicion || '').trim()}</span></td>
+                <td style="text-align: center;">
+                    <div style="display: flex; justify-content: center; gap: 8px; align-items: center; min-height: 32px;">
+                        <button class="action-btn-edit local-edit-btn" data-id="${item.id}" title="Editar Paciente">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button class="action-btn-edit local-rpa-btn" data-dni="${item.dni}" title="Ejecutar Consulta RPA" style="color: #3b82f6;">
+                            <i class="fa-solid fa-clipboard-check"></i>
+                        </button>
+                    </div>
                 </td>
             `;
             tbody.appendChild(row);
@@ -243,24 +275,29 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('paciente-dni').value = p.dni;
         document.getElementById('paciente-hc').value = p.historia_clinica;
         
-        // Formatear fecha para Flatpickr (Y-m-d a d/m/Y si viene de BD, aunque Flatpickr puede parsearlo si se setea via instance)
-        // La forma más fácil es usar la instancia de flatpickr
-        const fp = document.getElementById('paciente-fecha-nac')._flatpickr;
-        if (fp) {
-            fp.setDate(p.fecha_nacimiento);
+        // Formatear fecha para Flatpickr
+        if (fpInstance && p.fecha_nacimiento) {
+            const dateParts = p.fecha_nacimiento.split('-');
+            const dateObj = new Date(dateParts[0], dateParts[1] - 1, dateParts[2]);
+            fpInstance.setDate(dateObj, true);
         } else {
-            document.getElementById('paciente-fecha-nac').value = p.fecha_nacimiento;
+            document.getElementById('paciente-fecha-nac').value = p.fecha_nacimiento || '';
         }
 
-        document.getElementById('paciente-apellidos').value = p.apellidos;
-        document.getElementById('paciente-nombres').value = p.nombres;
+        document.getElementById('paciente-apellidos').value = p.apellidos || '';
+        document.getElementById('paciente-nombres').value = p.nombres || '';
         document.getElementById('paciente-codigo-ver').value = p.codigo_verificacion || '';
-        selectSeguro.value = p.tipo_seguro;
-        document.getElementById('paciente-servicio').value = p.servicio || '';
-        document.getElementById('paciente-condicion').value = p.condicion;
+        
+        setSelectValueCaseInsensitive(selectSeguro, p.tipo_seguro);
+        if (selectSeguro) {
+            selectSeguro.dispatchEvent(new Event('change'));
+        }
+        
+        setSelectValueCaseInsensitive(document.getElementById('paciente-servicio'), p.servicio);
+        setSelectValueCaseInsensitive(document.getElementById('paciente-condicion'), p.condicion);
 
-        if (p.tipo_seguro === 'Otros') {
-            grupoOtros.style.display = 'flex';
+        const isOtros = p.tipo_seguro && p.tipo_seguro.toUpperCase() === 'OTROS';
+        if (isOtros) {
             inputOtros.value = p.seguro_otros || '';
             inputOtros.required = true;
         } else {
@@ -268,16 +305,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             inputOtros.required = false;
         }
 
-        // Si falleció, NO permitir editar nada
-        if (p.condicion === 'Fallecido') {
+        // Si falleció, NO permitir editar nada (Comparación insensible)
+        const isFallecido = p.condicion && p.condicion.toUpperCase() === 'FALLECIDO';
+        if (isFallecido) {
             btnGuardar.style.display = 'none';
             // Crear/mostrar un mensajito si se quiere
         } else {
             btnGuardar.style.display = 'flex';
-            // Rehabilitar solo los 2 campos
-            selectSeguro.disabled = false;
-            document.getElementById('paciente-servicio').disabled = false;
-            if (p.tipo_seguro === 'Otros') inputOtros.disabled = false;
+            // Rehabilitar campos para edición
+            document.getElementById('paciente-dni').disabled = true; // El DNI nunca se edita
+            document.getElementById('paciente-hc').disabled = true; // La HC tampoco
+            document.getElementById('paciente-fecha-nac').disabled = true;
+            document.getElementById('paciente-apellidos').disabled = true;
+            document.getElementById('paciente-nombres').disabled = true;
+            document.getElementById('paciente-codigo-ver').disabled = true;
+            
+            selectSeguro.disabled = true;
+            document.getElementById('paciente-servicio').disabled = true;
+            document.getElementById('paciente-condicion').disabled = true;
+            inputOtros.disabled = true;
         }
 
         viewLista.style.display = 'none';
@@ -292,37 +338,63 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if (totalPages <= 1) return;
 
-        const btnPrev = document.createElement('button');
-        btnPrev.className = 'pagination-btn';
-        btnPrev.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
-        btnPrev.disabled = currentPage === 1;
-        btnPrev.onclick = () => { currentPage--; loadPacientes(); };
-        container.appendChild(btnPrev);
+        if (typeof DynamicTable !== 'undefined') {
+            DynamicTable.renderPagination({
+                containerId: 'pagination-container',
+                currentPage,
+                totalPages,
+                onPageChange: (page) => { 
+                    currentPage = page; 
+                    loadPacientes(); 
+                }
+            });
+        } else {
+            const btnPrev = document.createElement('button');
+            btnPrev.className = 'pagination-btn';
+            btnPrev.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+            btnPrev.disabled = currentPage === 1;
+            btnPrev.onclick = () => { currentPage--; loadPacientes(); };
+            container.appendChild(btnPrev);
 
-        const info = document.createElement('span');
-        info.className = 'pagination-info';
-        info.innerHTML = `Página <span class="seguro-badge">${currentPage}</span> de ${totalPages}`;
-        container.appendChild(info);
+            const info = document.createElement('span');
+            info.className = 'pagination-info';
+            info.innerHTML = `Página <span class="seguro-badge">${currentPage}</span> de ${totalPages}`;
+            container.appendChild(info);
 
-        const btnNext = document.createElement('button');
-        btnNext.className = 'pagination-btn';
-        btnNext.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
-        btnNext.disabled = currentPage === totalPages;
-        btnNext.onclick = () => { currentPage++; loadPacientes(); };
-        container.appendChild(btnNext);
+            const btnNext = document.createElement('button');
+            btnNext.className = 'pagination-btn';
+            btnNext.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+            btnNext.disabled = currentPage === totalPages;
+            btnNext.onclick = () => { currentPage++; loadPacientes(); };
+            container.appendChild(btnNext);
+        }
     };
 
-    window.addEventListener('resize', () => {
-        const oldRows = rowsPerPage;
-        const availableHeight = window.innerHeight - 350;
-        let calculatedRows = Math.floor(availableHeight / 60);
-        calculatedRows = calculatedRows > 2 ? calculatedRows : 3;
-        
-        if (calculatedRows !== oldRows) {
-            currentPage = 1;
-            loadPacientes(); // re-fetch si la capacidad visual cambia drásticamente
-        }
-    });
+    if (typeof DynamicTable !== 'undefined') {
+        DynamicTable.onResize(() => {
+            const oldRows = rowsPerPage;
+            const newRows = DynamicTable.calcRowsPerPage({
+                excludeSelectors: ['.top-header', '.module-commands', '.pagination-controls']
+            });
+            
+            if (newRows !== oldRows) {
+                currentPage = 1;
+                loadPacientes();
+            }
+        });
+    } else {
+        window.addEventListener('resize', () => {
+            const oldRows = rowsPerPage;
+            const availableHeight = window.innerHeight - 350;
+            let calculatedRows = Math.floor(availableHeight / 60);
+            calculatedRows = calculatedRows > 2 ? calculatedRows : 3;
+            
+            if (calculatedRows !== oldRows) {
+                currentPage = 1;
+                loadPacientes();
+            }
+        });
+    }
 
     // ============================================
     // BÚSQUEDA Y MANEJO DE VISTAS (SPA)
@@ -333,7 +405,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             searchQuery = val;
             sessionStorage.setItem('rp_search_query', val);
             currentPage = 1;
-            btnClearSearch.style.display = 'block';
             loadPacientes();
         }
     };
@@ -343,14 +414,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (e.key === 'Enter') executeSearch();
     });
 
-    btnClearSearch.addEventListener('click', () => {
-        searchQuery = '';
-        btnSearchDni.value = '';
-        sessionStorage.removeItem('rp_search_query');
-        btnClearSearch.style.display = 'none';
-        currentPage = 1;
-        loadPacientes();
-    });
+
 
     // ============================================
     // FILTRO POR SERVICIO
@@ -360,12 +424,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             filterQuery = val;
             sessionStorage.setItem('rp_filter_servicio', val);
             currentPage = 1;
-            btnClearFilterServicio.style.display = 'block';
+            filterServicio.style.color = "#1e293b"; // Color activo
             loadPacientes();
         } else {
             filterQuery = '';
             sessionStorage.removeItem('rp_filter_servicio');
-            btnClearFilterServicio.style.display = 'none';
+            filterServicio.style.color = "#94a3b8"; // Color placeholder
             currentPage = 1;
             loadPacientes();
         }
@@ -374,16 +438,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     filterServicio.addEventListener('change', (e) => {
         applyFilterServicio(e.target.value.trim());
     });
-    
-    filterServicio.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') applyFilterServicio(e.target.value.trim());
-    });
 
     btnClearFilterServicio.addEventListener('click', () => {
+        // Limpiar Filtro de Servicio
         filterQuery = '';
         filterServicio.value = '';
+        filterServicio.style.color = "#94a3b8"; // Reset color
         sessionStorage.removeItem('rp_filter_servicio');
-        btnClearFilterServicio.style.display = 'none';
+        
+        // Limpiar Buscador DNI
+        searchQuery = '';
+        btnSearchDni.value = '';
+        sessionStorage.removeItem('rp_search_query');
+
         currentPage = 1;
         loadPacientes();
     });
@@ -567,10 +634,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (sessionStorage.getItem('rp_search_query')) {
         btnSearchDni.value = sessionStorage.getItem('rp_search_query');
         searchQuery = btnSearchDni.value;
-        btnClearSearch.style.display = 'block';
     }
 
     loadServicios().then(() => {
         loadPacientes();
+    });
+
+    // Cambiar color del select dinámicamente
+    filterServicio.addEventListener('change', (e) => {
+        if (e.target.value === "") {
+            e.target.style.color = "#94a3b8";
+        } else {
+            e.target.style.color = "#1e293b";
+        }
     });
 });

@@ -10,19 +10,78 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        .badge-ok { background: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
-        .badge-alerta { background: #ef4444; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
-        .badge-na { background: #94a3b8; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+        /* Estado RPA: Correcto / OK — Verde suave */
+        .badge-ok {
+            background: rgba(16, 185, 129, 0.15);
+            color: #059669;
+            padding: 4px 10px; border-radius: 6px;
+            font-size: 12px; font-weight: 700;
+            display: inline-block;
+        }
+        /* Estado RPA: Alerta — Amarillo suave */
+        .badge-alerta {
+            background: rgba(245, 158, 11, 0.15);
+            color: #d97706;
+            padding: 4px 10px; border-radius: 6px;
+            font-size: 12px; font-weight: 700;
+            display: inline-block;
+        }
+        /* Estado RPA: Error — Rojo suave */
+        .badge-error {
+            background: rgba(239, 68, 68, 0.15);
+            color: #dc2626;
+            padding: 4px 10px; border-radius: 6px;
+            font-size: 12px; font-weight: 700;
+            display: inline-block;
+        }
+        /* Estado RPA: En Proceso / N/A — Plomo suave */
+        .badge-na {
+            background: rgba(148, 163, 184, 0.18);
+            color: #64748b;
+            padding: 4px 10px; border-radius: 6px;
+            font-size: 12px; font-weight: 700;
+            display: inline-block;
+        }
+
+        /* Fila con estado ALERTA: fondo rojo más visible pero suave */
+        tr.row-alerta {
+            background: rgba(239, 68, 68, 0.10) !important;
+            border-left: 3px solid rgba(239, 68, 68, 0.5);
+        }
+        tr.row-alerta:hover {
+            background: rgba(239, 68, 68, 0.16) !important;
+        }
+
+        /* Banner de alerta global — se posiciona debajo del header */
+        #rpa-alerta-banner {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-left: 4px solid #ef4444;
+            border-radius: 8px;
+            padding: 12px 18px;
+            color: #dc2626;
+            font-size: 13px;
+            font-weight: 600;
+            display: none;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            animation: fadeInBanner 0.3s ease;
+        }
+        #rpa-alerta-banner.show {
+            display: flex;
+        }
+        @keyframes fadeInBanner {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
     </style>
 </head>
 <body>
     <div class="main-wrapper">
         <main class="page-content" id="page-content">
 
-            <div class="page-header" style="margin-bottom: 20px;">
-                <h2>Consulta Rápida RPA</h2>
-                <p>Busque un paciente y ejecute la validación automatizada contra EsSalud.</p>
-            </div>
+
 
             <!-- SECCION DE FILTROS -->
             <div class="search-filters-container" id="search-filters">
@@ -40,14 +99,14 @@
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button class="btn-module primary" id="btn-search" style="padding: 10px 20px;"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
-                    <button class="btn-module" id="btn-clear" style="padding: 10px 20px; background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0;">Limpiar</button>
+                    <button class="btn-module btn-clear-hover" id="btn-clear" style="padding: 10px 20px; background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; font-weight: 500;">Limpiar</button>
                 </div>
             </div>
 
             <!-- BOTONES ACCION (ocultos inicialmente) -->
             <div id="actions-bar" style="display: none; margin-top: 20px; background: white; padding: 15px; border-radius: 8px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-weight: 600; color: #1e293b;"><span id="selected-count">0</span> pacientes seleccionados (Max 2)</span>
-                <button class="btn-module shadow" id="btn-validar" disabled style="background: #8b5cf6; color: white; border: none; padding: 10px 20px; font-weight: 600; cursor: not-allowed; opacity: 0.6;">
+                <span style="font-weight: 400; color: #1e293b; text-transform: uppercase;"><span id="selected-count" style="font-weight: 700;">0</span> PACIENTES SELECCIONADOS / MÁXIMO 2 REGISTROS</span>
+                <button class="btn-module shadow btn-matte-black" id="btn-validar" disabled style="padding: 10px 20px; font-weight: 600;">
                     Ejecutar Validación RPA
                     <i id="validar-spinner" class="fa-solid fa-circle-notch fa-spin" style="display:none; margin-left:8px;"></i>
                 </button>
@@ -75,6 +134,7 @@
                         <tbody id="tbody-pacientes"></tbody>
                     </table>
                 </div>
+                <div class="pagination-controls" id="pagination-consulta"></div>
             </div>
 
             <!-- Toast -->
@@ -88,6 +148,7 @@
 
     <script src="../../js/supabase-config.js"></script>
     <script src="../../js/layout.js"></script>
+    <script src="../../js/dynamic-table.js"></script>
     <script src="consulta-rapida.js"></script>
 </body>
 </html>

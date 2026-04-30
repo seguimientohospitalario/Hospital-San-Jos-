@@ -125,14 +125,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     const renderSearchTable = (items) => {
         tbodyPacientes.innerHTML = '';
         if (!items || items.length === 0) {
-            tbodyPacientes.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 30px; color:#94a3b8;">No se encontraron pacientes con esos criterios.</td></tr>';
+            tbodyPacientes.innerHTML = '<tr><td colspan="8" style="text-align:center; padding: 30px; color:#94a3b8;">No se encontraron pacientes con esos criterios.</td></tr>';
             return;
         }
 
-        items.forEach(item => {
+        items.forEach((item, idx) => {
             const row = document.createElement('tr');
             row.innerHTML = `
-                <td><strong>${item.dni}</strong></td>
+                <td>${item.dni}</td>
                 <td>${item.apellidos}, ${item.nombres}</td>
                 <td>${item.historia_clinica}</td>
                 <td><span class="seguro-badge">${item.tipo_seguro}</span></td>
@@ -299,22 +299,25 @@ document.addEventListener('DOMContentLoaded', async () => {
             const dotClass = getEventDotClass(ev.tipo_evento);
             const iconClass = getEventIcon(ev.tipo_evento);
             const fecha = new Date(ev.fecha_evento);
-            const fechaStr = fecha.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            const horaStr = fecha.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+            const optionsDate = { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Lima' };
+            const optionsTime = { hour: '2-digit', minute: '2-digit', timeZone: 'America/Lima' };
+            const fechaStr = fecha.toLocaleDateString('es-PE', optionsDate);
+            const horaStr = fecha.toLocaleTimeString('es-PE', optionsTime);
 
             // Contador de Días en la línea de tiempo (Rango por Evento)
             let diasTranscurridosHTML = '';
             
             if (ev.tipo_evento !== 'Alta' && ev.tipo_evento !== 'Fallecido') {
                 const isUltimoEvento = (index === eventos.length - 1);
-                const fechaFin = isUltimoEvento ? new Date() : new Date(eventos[index + 1].fecha_evento);
+                const nowPeru = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Lima" }));
+                const fechaFin = isUltimoEvento ? nowPeru : new Date(eventos[index + 1].fecha_evento);
                 
                 // Diferencia en días calendario (sin horas)
                 const d1 = new Date(fecha).setHours(0,0,0,0);
                 const d2 = new Date(fechaFin).setHours(0,0,0,0);
                 const dias = Math.max(0, Math.round((d2 - d1) / 86400000));
                 
-                const fechaFinStr = isUltimoEvento ? 'Actual' : fechaFin.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                const fechaFinStr = isUltimoEvento ? 'Actual' : fechaFin.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: 'America/Lima' });
                 
                 diasTranscurridosHTML = `<span style="font-size: 12px; color: #64748b; font-weight: 600; margin-left: auto; background: #f1f5f9; padding: 3px 10px; border-radius: 12px; border: 1px solid #e2e8f0;">${dias} ${dias === 1 ? 'día' : 'días'} | ${fechaStr} - ${fechaFinStr}</span>`;
             } else {
@@ -394,7 +397,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         let diasClase = '';
 
         if (ultimoIngreso) {
-            const fin = (condicion === 'Hospitalizado') ? new Date() : (ultimaAlta || new Date());
+            const nowPeru = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Lima" }));
+            const fin = (condicion === 'Hospitalizado') ? nowPeru : (ultimaAlta || nowPeru);
             const dias = Math.max(0, Math.ceil((fin - ultimoIngreso) / (1000 * 60 * 60 * 24)));
             diasTexto = dias + (dias === 1 ? ' d\u00EDa' : ' d\u00EDas');
             diasClase = condicion === 'Hospitalizado' ? 'dias-activo' : 'dias-alta';
@@ -630,14 +634,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     btnClear.addEventListener('click', () => {
+        // Limpiar todos los campos de búsqueda
         filterDni.value = '';
         filterHc.value = '';
         filterApellidos.value = '';
         filterNombres.value = '';
+        
+        // Limpiar persistencia
         sessionStorage.removeItem('vp_filter_dni');
         sessionStorage.removeItem('vp_filter_hc');
         sessionStorage.removeItem('vp_filter_apellidos');
         sessionStorage.removeItem('vp_filter_nombres');
+        
+        // Limpiar resultados
         tbodyPacientes.innerHTML = '';
         tablePacientes.style.display = 'none';
     });
