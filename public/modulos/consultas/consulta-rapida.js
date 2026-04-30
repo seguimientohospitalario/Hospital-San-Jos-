@@ -25,7 +25,61 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveState = () => {
         try { sessionStorage.setItem('cr_accumulated', JSON.stringify(accumulatedResults)); } catch {}
     };
-    const restoreState = () => {
+
+    // Función para refrescar los datos de los pacientes acumulados desde la BD (Tiempo Real)
+    const refreshLatestData = async () => {
+        if (accumulatedResults.length === 0) return;
+        
+        const ids = accumulatedResults.map(p => p.id);
+        const { data, error } = await supabaseClient
+            .from('pacientes')
+            .select('*')
+            .in('id', ids);
+
+        if (!error && data) {
+            // Actualizar acumulados y RE-EVALUAR ALERTAS si el seguro cambió
+            accumulatedResults = accumulatedResults.map(p => {
+                const latest = data.find(l => l.id === p.id);
+                if (!latest) return p;
+
+                let updatedStatus = latest.estado_validacion;
+                let updatedExt = latest.tipo_seguro_validado;
+
+                // Lógica Bidireccional: Comparar Declarado vs Extraído si hay una validación previa
+                if (latest.tipo_seguro_validado && !latest.tipo_seguro_validado.includes('COBERTURA') && latest.estado_validacion !== 'ERROR') {
+                    const decl = (latest.tipo_seguro || '').toUpperCase();
+                    const ext = (latest.tipo_seguro_validado || '').toUpperCase();
+                    
+                    const matches = decl && ext && (ext.includes(decl) || decl.includes(ext));
+                    
+                    if (matches) {
+                        if (updatedStatus !== 'OK' && updatedStatus !== 'CORRECTO') {
+                            updatedStatus = 'OK';
+                            supabaseClient.from('pacientes').update({ estado_validacion: 'OK' }).eq('id', p.id).then();
+                        }
+                    } else {
+                        // NO coinciden. Si antes estaba OK, ahora debe ser ALERTA
+                        if (updatedStatus === 'OK' || updatedStatus === 'CORRECTO' || !updatedStatus || updatedStatus === 'N/A') {
+                            updatedStatus = 'ALERTA';
+                            supabaseClient.from('pacientes').update({ estado_validacion: 'ALERTA' }).eq('id', p.id).then();
+                        }
+                    }
+                }
+
+                return { ...latest, estado_validacion: updatedStatus, tipo_seguro_validado: updatedExt };
+            });
+            
+            // Sincronizar selección
+            selectedPatients = selectedPatients.map(sp => {
+                const upd = accumulatedResults.find(r => r.id === sp.id);
+                return upd ? upd : sp;
+            });
+
+            renderAccumulatedTable();
+        }
+    };
+
+    const restoreState = async () => {
         try {
             // Restaurar inputs
             const savedDNI = sessionStorage.getItem('cr_filter_dni');
@@ -38,10 +92,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Restaurar tabla
             const saved = sessionStorage.getItem('cr_accumulated');
-            if (saved) { accumulatedResults = JSON.parse(saved); renderAccumulatedTable(); }
-
-            // Si hay filtros pero no resultados, podrías auto-cargar, 
-            // pero el usuario pidió que se mantengan los filtros si cambia de pantalla.
+            if (saved) { 
+                accumulatedResults = JSON.parse(saved); 
+                // Refrescar con datos reales de la BD para evitar datos obsoletos (Seguro, etc)
+                await refreshLatestData();
+            }
         } catch {}
     };
 
@@ -132,9 +187,10 @@ document.addEventListener('DOMContentLoaded', () => {
         tbodyPacientes.innerHTML = '';
         if (accumulatedResults.length === 0) {
             tablePacientes.style.display = 'none';
-            actionsBar.style.display = 'none';
+            actionsBar.style.display = 'flex'; // Mantener siempre visible
             updateAlertaBanner();
             document.getElementById('pagination-consulta').innerHTML = '';
+            updateActionsBar(); // Asegurar que el contador diga 0 y el botón esté deshabilitado
             return;
         }
 
@@ -199,15 +255,23 @@ document.addEventListener('DOMContentLoaded', () => {
                 extCellHTML = `<span style="color: #d97706; font-size: 12px;"><i class="fa-solid fa-triangle-exclamation"></i> ${p.tipo_seguro_validado}</span>`;
             }
 
+            // Formatear fecha de última validación
+            let ultimaVal = p.fecha_ultima_validacion || '-';
+            if (ultimaVal !== '-') {
+                const d = new Date(ultimaVal);
+                ultimaVal = d.toLocaleString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+            }
+
             tr.innerHTML = `
                 <td>${p.dni} <br><small style="color:#64748b;">CUI: ${p.codigo_verificacion || 'N/A'}</small></td>
                 <td>${p.apellidos}, ${p.nombres} <br><small style="color:#64748b;">Nac: ${nacFormateada}</small></td>
                 <td style="font-weight: 600;">${p.tipo_seguro || 'NO DECLARADO'}</td>
                 <td id="ext-${p.id}" style="color: #475569;">${extCellHTML}</td>
                 <td id="badge-${p.id}"><span class="${badgeClass}">${p.estado_validacion || 'N/A'}</span></td>
+                <td style="color:#64748b; font-size: 12px;">${ultimaVal}</td>
                 <td style="text-align:center;">
-                    <button id="btn-redirect-${p.id}" style="display:${btnDisplay}; background:#3b82f6; color:white; border:none; border-radius:6px; padding:6px 10px; cursor:pointer; font-size:13px;" title="Ver registro del paciente">
-                        <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                    <button id="btn-redirect-${p.id}" class="btn-module primary" style="display:${btnDisplay}; border:none; border-radius:6px; padding:6px 12px; cursor:pointer; font-size:13px;" title="Ver registro del paciente" onclick="window.location.href='../seguimiento/verificacion-paciente.html?dni=${p.dni}&from=rapida'">
+                        <i class="fa-solid fa-rotate"></i>
                     </button>
                 </td>
             `;
@@ -285,23 +349,28 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Agregar resultados únicos al inicio
+        // Agregar o Actualizar resultados
         data.forEach(newPatient => {
-            if (!accumulatedResults.find(p => p.id === newPatient.id)) {
+            const existingIdx = accumulatedResults.findIndex(p => p.id === newPatient.id);
+            if (existingIdx !== -1) {
+                // Actualizar datos de BD (Seguro, etc)
+                accumulatedResults[existingIdx] = { ...newPatient };
+            } else {
                 accumulatedResults.unshift(newPatient);
             }
         });
 
-        // Limitar a máximo 5 usuarios en la tabla
-        if (accumulatedResults.length > 5) {
-            accumulatedResults = accumulatedResults.slice(0, 5);
-        }
+        // Limitar a máximo 50 usuarios para no saturar memoria
+        if (accumulatedResults.length > 50) accumulatedResults = accumulatedResults.slice(0, 50);
 
         // Limpiar de selectedPatients si fueron eliminados por el límite
         selectedPatients = selectedPatients.filter(sp => accumulatedResults.find(ar => ar.id === sp.id));
-        updateActionsBar();
-
+        
         renderAccumulatedTable();
+        saveState();
+        
+        // Ejecutar comparación automática inmediatamente tras cargar nuevos datos
+        refreshLatestData();
     };
 
     btnSearch.addEventListener('click', loadPacientes);
@@ -516,4 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Restaurar tabla/resultados de sesión anterior
         restoreState();
     }
+
+    // Refrescar al recuperar foco (por si el usuario volvió tras editar un paciente en otra pestaña)
+    window.addEventListener('focus', refreshLatestData);
 });
