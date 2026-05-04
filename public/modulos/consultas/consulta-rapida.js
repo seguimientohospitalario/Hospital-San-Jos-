@@ -222,11 +222,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             showToast(`Iniciando validación de ${selectedDNIs.length} pacientes...`);
             
+            // Construir lista de pacientes con datos completos
+            const pacientesParaValidar = selectedDNIs.map(dni => {
+                const paciente = accumulatedResults.find(p => p.dni === dni);
+                return {
+                    dni: paciente.dni,
+                    fecha_nacimiento: paciente.fecha_nacimiento || '',
+                    codigo_verificacion: paciente.codigo_verificacion || ''
+                };
+            });
+
             // Llamada real al backend de Railway
             const response = await fetch('https://hospital-san-jos-production.up.railway.app/validate-batch', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ dnis: selectedDNIs })
+                body: JSON.stringify({ pacientes: pacientesParaValidar })
             });
 
             if (!response.ok) throw new Error('Error en la respuesta del servidor RPA');

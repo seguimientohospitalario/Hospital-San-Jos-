@@ -14,10 +14,7 @@ app.get('/', (req, res) => {
     res.json({ status: 'active', service: 'RPA Backend - Hospital San José', timestamp: new Date().toISOString() });
 });
 
-// Configuración de Estrategia
-const BATCH_SIZE = 5;
-
-// Lista de User-Agents rotativos
+// User-Agents rotativos
 const USER_AGENTS = [
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -29,11 +26,15 @@ function getRandomUA() {
     return USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
 }
 
+function delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 /**
  * Lanzar navegador ligero optimizado para cloud
  */
 async function launchBrowser() {
-    console.log('[Browser] Lanzando Chromium ligero...');
+    console.log('[Browser] Lanzando Chromium...');
     const browser = await puppeteer.launch({
         args: chromium.args.concat([
             '--no-sandbox',
@@ -45,7 +46,7 @@ async function launchBrowser() {
             '--single-process',
             '--disable-gpu'
         ]),
-        defaultViewport: chromium.defaultViewport,
+        defaultViewport: { width: 1280, height: 900 },
         executablePath: await chromium.executablePath(),
         headless: chromium.headless
     });
@@ -54,71 +55,169 @@ async function launchBrowser() {
 }
 
 /**
- * Scraping de un solo DNI en el portal de EsSalud
+ * Scraping de un paciente en "¿Dónde me atiendo?" de EsSalud
+ * URL: https://dondemeatiendo.essalud.gob.pe/#/consulta
+ * 
+ * FLUJO COMPLETO:
+ * 1. Llenar DNI en input#mat-input-0
+ * 2. Llenar Fecha de Nacimiento en input#mat-input-1
+ * 3. Llenar CUI (Código Verificación) en input#mat-input-2
+ * 4. Click en checkbox de cláusula → abre modal
+ * 5. Scrollear modal hasta abajo
+ * 6. Click en botón "Aceptar" del modal
+ * 7. Click en botón "Consultar"
+ * 8. Extraer resultado
  */
-async function scrapeDni(dni, browser) {
+async function scrapePaciente(paciente, browser) {
+    const { dni, fecha_nacimiento, codigo_verificacion } = paciente;
     const page = await browser.newPage();
     await page.setUserAgent(getRandomUA());
 
     try {
         console.log(`[RPA] Iniciando consulta DNI: ${dni}`);
 
-        // Navigation con timeout robusto
-        await page.goto('https://ww1.essalud.gob.pe/sisep/postulante/postulante/postulante_informacion.htm', {
+        // ========== NAVEGAR AL PORTAL ==========
+        await page.goto('https://dondemeatiendo.essalud.gob.pe/#/consulta', {
             waitUntil: 'networkidle2',
             timeout: 30000
         });
+        await delay(2000);
 
-        // Action Delay: simular humano
-        await delay(1000);
-
-        // Escribir DNI en el campo
-        await page.waitForSelector('#txtDocumento', { timeout: 12000 });
-        await page.type('#txtDocumento', dni, { delay: 80 });
+        // ========== 1. NÚMERO DE DOCUMENTO (DNI) ==========
+        await page.waitForSelector('input#mat-input-0', { timeout: 12000 });
+        await page.click('input#mat-input-0');
+        await page.type('input#mat-input-0', dni, { delay: 80 });
+        console.log(`[RPA] DNI ${dni} ingresado`);
         await delay(500);
 
-        // Click en buscar
-        await page.click('#btnBuscar');
+        // ========== 2. FECHA DE NACIMIENTO ==========
+        if (fecha_nacimiento) {
+            // Formatear fecha: si viene como YYYY-MM-DD → DD/MM/YYYY
+            let fechaFormateada = fecha_nacimiento;
+            if (fecha_nacimiento.includes('-')) {
+                const parts = fecha_nacimiento.split('-');
+                fechaFormateada = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            await page.click('input#mat-input-1');
+            await page.type('input#mat-input-1', fechaFormateada, { delay: 60 });
+            console.log(`[RPA] Fecha ingresada: ${fechaFormateada}`);
+            await delay(500);
+        }
 
-        // Esperar resultado
-        await page.waitForSelector('#txtNombre', { timeout: 15000 });
+        // ========== 3. CUI (DÍGITO VERIFICADOR) ==========
+        if (codigo_verificacion) {
+            await page.click('input#mat-input-2');
+            await page.type('input#mat-input-2', codigo_verificacion, { delay: 80 });
+            console.log(`[RPA] CUI ingresado: ${codigo_verificacion}`);
+            await delay(500);
+        }
+
+        // ========== 4. CHECKBOX DE CLÁUSULA ==========
+        // Click en el checkbox (mat-checkbox) para abrir el modal
+        const checkboxSelector = 'mat-checkbox .mat-checkbox-inner-container';
+        await page.waitForSelector(checkboxSelector, { timeout: 8000 });
+        await page.click(checkboxSelector);
+        console.log(`[RPA] Checkbox de cláusula clickeado`);
+        await delay(1500);
+
+        // ========== 5. SCROLLEAR MODAL HASTA ABAJO ==========
+        // Esperar que aparezca el modal
+        await page.waitForSelector('mat-dialog-container', { timeout: 8000 });
+        console.log(`[RPA] Modal de cláusula abierto`);
+
+        // Scrollear el contenedor del modal hasta el final
+        await page.evaluate(() => {
+            const dialog = document.querySelector('mat-dialog-container');
+            if (dialog) {
+                dialog.scrollTop = dialog.scrollHeight;
+            }
+            // También buscar un div scrollable dentro del dialog
+            const scrollable = dialog?.querySelector('.mat-dialog-content') || 
+                              dialog?.querySelector('[mat-dialog-content]') ||
+                              dialog?.querySelector('.cdk-overlay-pane');
+            if (scrollable) {
+                scrollable.scrollTop = scrollable.scrollHeight;
+            }
+        });
         await delay(1000);
 
-        // Extraer datos
+        // ========== 6. CLICK EN "ACEPTAR" DEL MODAL ==========
+        // El botón "Aceptar" está dentro del modal
+        const aceptarBtn = await page.evaluateHandle(() => {
+            const buttons = Array.from(document.querySelectorAll('button'));
+            return buttons.find(b => b.textContent.trim().includes('Aceptar'));
+        });
+        if (aceptarBtn) {
+            await aceptarBtn.click();
+            console.log(`[RPA] Botón "Aceptar" clickeado`);
+        } else {
+            // Fallback: intentar con selector directo
+            await page.click('button.mat-flat-button.mat-primary');
+            console.log(`[RPA] Botón "Aceptar" clickeado (fallback)`);
+        }
+        await delay(1500);
+
+        // ========== 7. CLICK EN "CONSULTAR" ==========
+        const consultarBtn = await page.evaluateHandle(() => {
+            const buttons = Array.from(document.querySelectorAll('button'));
+            return buttons.find(b => b.textContent.trim().includes('Consultar'));
+        });
+        if (consultarBtn) {
+            await consultarBtn.click();
+            console.log(`[RPA] Botón "Consultar" clickeado`);
+        } else {
+            await page.click('button.ess-btn-primary');
+            console.log(`[RPA] Botón "Consultar" clickeado (fallback)`);
+        }
+
+        // ========== 8. ESPERAR Y EXTRAER RESULTADO ==========
+        await delay(5000);
+
         const data = await page.evaluate(() => {
-            const nombre = document.querySelector('#txtNombre')?.value || '';
-            const tipoSeguro = document.querySelector('#txtTipoSeguro')?.value || 'NO ENCONTRADO';
-            const cobertura = document.querySelector('#txtCobertura')?.value || 'DESCONOCIDO';
-            const estado = document.querySelector('#txtEstado')?.value || 'DESCONOCIDO';
-            return { nombre, seguro: tipoSeguro, cobertura, estado };
+            const body = document.body.innerText.toUpperCase();
+
+            let seguro = 'NO ENCONTRADO';
+            let cobertura = 'DESCONOCIDO';
+
+            if (body.includes('NO TIENE DERECHO DE COBERTURA') || 
+                body.includes('NO SE ENCONTRARON RESULTADOS') ||
+                body.includes('NO ACREDITADO')) {
+                seguro = 'SIN COBERTURA';
+                cobertura = 'NO TIENE DERECHO DE COBERTURA';
+            } else if (body.includes('REGULAR') || body.includes('ESSALUD') || body.includes('ACTIVO')) {
+                seguro = 'ESSALUD';
+                // Intentar extraer el tipo específico
+                if (body.includes('REGULAR')) cobertura = 'REGULAR';
+                else if (body.includes('POTESTATIVO')) cobertura = 'POTESTATIVO';
+                else cobertura = 'ACTIVO';
+            }
+
+            // Capturar texto visible para debug
+            return { seguro, cobertura, textoVisible: body.substring(0, 800) };
         });
 
-        console.log(`[RPA] DNI ${dni} → ${data.seguro} | ${data.cobertura}`);
-        return { dni, success: true, ...data };
+        console.log(`[RPA] DNI ${dni} → Seguro: ${data.seguro} | Cobertura: ${data.cobertura}`);
+        return { dni, success: true, seguro: data.seguro, cobertura: data.cobertura };
 
     } catch (error) {
         console.error(`[RPA] Error DNI ${dni}:`, error.message);
-        return { dni, success: false, seguro: 'ERROR', error: error.message };
+        return { dni, success: false, seguro: 'ERROR', cobertura: error.message };
     } finally {
         await page.close();
     }
-}
-
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 // ==================== ENDPOINTS ====================
 
 // Validación individual
 app.post('/validate', async (req, res) => {
-    const { dni } = req.body;
+    const { dni, fecha_nacimiento, codigo_verificacion } = req.body;
     if (!dni) return res.status(400).json({ error: 'DNI requerido' });
 
     let browser;
     try {
         browser = await launchBrowser();
-        const result = await scrapeDni(dni, browser);
+        const result = await scrapePaciente({ dni, fecha_nacimiento, codigo_verificacion }, browser);
         res.json({ success: true, result });
     } catch (err) {
         console.error('[API] Error:', err.message);
@@ -128,36 +227,27 @@ app.post('/validate', async (req, res) => {
     }
 });
 
-// Validación en lote (máx 50 pacientes)
+// Validación en lote
 app.post('/validate-batch', async (req, res) => {
-    const { dnis } = req.body;
-    if (!Array.isArray(dnis) || dnis.length === 0) {
-        return res.status(400).json({ error: 'Lista de DNIs requerida' });
+    const { pacientes } = req.body;
+    if (!Array.isArray(pacientes) || pacientes.length === 0) {
+        return res.status(400).json({ error: 'Lista de pacientes requerida' });
     }
 
-    console.log(`[RPA] Solicitud batch: ${dnis.length} pacientes`);
+    console.log(`[RPA] Solicitud batch: ${pacientes.length} pacientes`);
 
     let browser;
     try {
         browser = await launchBrowser();
         const results = [];
 
-        // Batching: procesar de a BATCH_SIZE para no saturar RAM
-        for (let i = 0; i < dnis.length; i += BATCH_SIZE) {
-            const batch = dnis.slice(i, i + BATCH_SIZE);
-            console.log(`[RPA] Lote ${Math.floor(i / BATCH_SIZE) + 1} (${batch.length} DNIs)`);
+        for (let i = 0; i < pacientes.length; i++) {
+            console.log(`[RPA] Procesando ${i + 1}/${pacientes.length}`);
+            const result = await scrapePaciente(pacientes[i], browser);
+            results.push(result);
 
-            // Procesar secuencialmente dentro del lote para ahorrar RAM
-            for (const dni of batch) {
-                const result = await scrapeDni(dni, browser);
-                results.push(result);
-            }
-
-            // Pausa entre lotes para estabilizar
-            if (i + BATCH_SIZE < dnis.length) {
-                console.log('[RPA] Pausa entre lotes...');
-                await delay(2000);
-            }
+            // Pausa entre consultas para estabilizar
+            if (i < pacientes.length - 1) await delay(2000);
         }
 
         const exitosos = results.filter(r => r.success).length;
