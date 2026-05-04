@@ -221,18 +221,56 @@ document.addEventListener('DOMContentLoaded', async () => {
         
         try {
             showToast(`Iniciando validación de ${selectedDNIs.length} pacientes...`);
-            // Aquí irá la llamada al backend de Koyeb
-            console.log('Enviando a RPA:', selectedDNIs);
             
-            // Simulación temporal hasta integrar el endpoint real
-            setTimeout(() => {
-                showToast('Validación completada (Simulación)');
-                btnValidar.disabled = false;
-                spinner.style.display = 'none';
-            }, 2000);
+            // Llamada real al backend de Railway
+            const response = await fetch('https://hospital-san-jos-production.up.railway.app/validate-batch', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dnis: selectedDNIs })
+            });
+
+            if (!response.ok) throw new Error('Error en la respuesta del servidor RPA');
+
+            const result = await response.json();
+            
+            if (result.success) {
+                showToast('Validación completada con éxito');
+                
+                result.results.forEach(res => {
+                    const row = tbodyPacientes.querySelector(`input[data-dni="${res.dni}"]`)?.closest('tr');
+                    if (row) {
+                        const cellSeguroDeclarado = row.cells[5]; // Seguro que viene de BD
+                        const cellSeguroExtraido = row.cells[6] || row.insertCell(6); // Nueva columna para resultado robot
+                        
+                        const seguroDeclarado = cellSeguroDeclarado.innerText.trim().toUpperCase();
+                        const seguroExtraido = res.seguro.toUpperCase();
+                        
+                        // LÓGICA DE VALIDACIÓN
+                        let isValid = false;
+                        if (seguroExtraido.includes("NO TIENE DERECHO DE COBERTURA")) {
+                            isValid = true;
+                        } else if (seguroDeclarado === seguroExtraido || seguroExtraido.includes(seguroDeclarado)) {
+                            isValid = true;
+                        }
+
+                        if (res.success) {
+                            if (isValid) {
+                                cellSeguroExtraido.innerHTML = `<span style="color: #10b981; font-weight: 700;">${res.seguro}</span> <br> <span class="badge-ok" style="background:#10b981; color:white; padding:2px 6px; border-radius:4px; font-size:10px;">COINCIDE ✅</span>`;
+                            } else {
+                                cellSeguroExtraido.innerHTML = `<span style="color: #ef4444; font-weight: 700;">${res.seguro}</span> <br> <span class="badge-alerta" style="background:#ef4444; color:white; padding:2px 6px; border-radius:4px; font-size:10px;">DISCREPANCIA ⚠️</span>`;
+                                showToast(`Discrepancia detectada en DNI: ${res.dni}`, true);
+                            }
+                        } else {
+                            cellSeguroExtraido.innerHTML = `<span style="color: #94a3b8;">Error en robot</span>`;
+                        }
+                    }
+                });
+            }
 
         } catch (err) {
-            showToast('Error al conectar con el servicio RPA', true);
+            console.error('RPA Error:', err);
+            showToast('Error al conectar con el servicio RPA: ' + err.message, true);
+        } finally {
             btnValidar.disabled = false;
             spinner.style.display = 'none';
         }
