@@ -15,6 +15,10 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 10000;
 
+app.get('/', (req, res) => {
+    res.send('RPA Backend (Hospital San José) - Servidor Activo ✅');
+});
+
 // Configuración de Estrategia: Concurrencia y Batching
 const MAX_CONCURRENT = 3; 
 const BATCH_SIZE = 5;
