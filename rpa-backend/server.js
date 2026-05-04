@@ -113,62 +113,34 @@ async function scrapePaciente(paciente, browser) {
         }
 
         // ========== 4. CHECKBOX DE CLÁUSULA ==========
-        // Click en el checkbox (mat-checkbox) para abrir el modal
-        const checkboxSelector = 'mat-checkbox .mat-checkbox-inner-container';
-        await page.waitForSelector(checkboxSelector, { timeout: 8000 });
-        await page.click(checkboxSelector);
+        // Angular Material MDC: el tag es "mat-checkbox" directamente
+        await page.waitForSelector('mat-checkbox', { timeout: 8000 });
+        await page.click('mat-checkbox');
         console.log(`[RPA] Checkbox de cláusula clickeado`);
         await delay(1500);
 
         // ========== 5. SCROLLEAR MODAL HASTA ABAJO ==========
-        // Esperar que aparezca el modal
         await page.waitForSelector('mat-dialog-container', { timeout: 8000 });
         console.log(`[RPA] Modal de cláusula abierto`);
 
         // Scrollear el contenedor del modal hasta el final
         await page.evaluate(() => {
             const dialog = document.querySelector('mat-dialog-container');
-            if (dialog) {
-                dialog.scrollTop = dialog.scrollHeight;
-            }
-            // También buscar un div scrollable dentro del dialog
-            const scrollable = dialog?.querySelector('.mat-dialog-content') || 
-                              dialog?.querySelector('[mat-dialog-content]') ||
-                              dialog?.querySelector('.cdk-overlay-pane');
-            if (scrollable) {
-                scrollable.scrollTop = scrollable.scrollHeight;
-            }
+            if (dialog) dialog.scrollTop = dialog.scrollHeight;
+            const content = dialog?.querySelector('.mat-mdc-dialog-content') ||
+                           dialog?.querySelector('[mat-dialog-content]');
+            if (content) content.scrollTop = content.scrollHeight;
         });
         await delay(1000);
 
         // ========== 6. CLICK EN "ACEPTAR" DEL MODAL ==========
-        // El botón "Aceptar" está dentro del modal
-        const aceptarBtn = await page.evaluateHandle(() => {
-            const buttons = Array.from(document.querySelectorAll('button'));
-            return buttons.find(b => b.textContent.trim().includes('Aceptar'));
-        });
-        if (aceptarBtn) {
-            await aceptarBtn.click();
-            console.log(`[RPA] Botón "Aceptar" clickeado`);
-        } else {
-            // Fallback: intentar con selector directo
-            await page.click('button.mat-flat-button.mat-primary');
-            console.log(`[RPA] Botón "Aceptar" clickeado (fallback)`);
-        }
+        await page.click('mat-dialog-container button.mat-primary');
+        console.log(`[RPA] Botón "Aceptar" clickeado`);
         await delay(1500);
 
         // ========== 7. CLICK EN "CONSULTAR" ==========
-        const consultarBtn = await page.evaluateHandle(() => {
-            const buttons = Array.from(document.querySelectorAll('button'));
-            return buttons.find(b => b.textContent.trim().includes('Consultar'));
-        });
-        if (consultarBtn) {
-            await consultarBtn.click();
-            console.log(`[RPA] Botón "Consultar" clickeado`);
-        } else {
-            await page.click('button.ess-btn-primary');
-            console.log(`[RPA] Botón "Consultar" clickeado (fallback)`);
-        }
+        await page.click('button.ess-btn-primary');
+        console.log(`[RPA] Botón "Consultar" clickeado`);
 
         // ========== 8. ESPERAR Y EXTRAER RESULTADO ==========
         await delay(5000);
