@@ -11,10 +11,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // DOM - Búsqueda (Nuevos IDs de Verificación)
     const searchFilters = document.getElementById('search-filters');
-    const filterDni = document.getElementById('filter-dni');
-    const filterHc = document.getElementById('filter-hc');
+    const filterDniHc = document.getElementById('filter-dni-hc');
     const filterApellidos = document.getElementById('filter-apellidos');
-    const filterNombres = document.getElementById('filter-nombres');
+    const filterSeguro = document.getElementById('filter-seguro');
     const btnSearch = document.getElementById('btn-search');
     const btnClear = document.getElementById('btn-clear');
     
@@ -88,15 +87,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                 .order('creado_en', { ascending: false })
                 .range(startRange, endRange);
 
-            const dniVal = filterDni.value.trim();
-            const hcVal = filterHc.value.trim();
+            const dniHcVal = filterDniHc.value.trim();
             const apeVal = filterApellidos.value.trim();
-            const nomVal = filterNombres.value.trim();
+            const seguroVal = filterSeguro.value;
 
-            if (dniVal) queryObj = queryObj.ilike('dni', `%${dniVal}%`);
-            if (hcVal) queryObj = queryObj.ilike('historia_clinica', `%${hcVal}%`);
-            if (apeVal) queryObj = queryObj.ilike('apellidos', `%${normalizeText(apeVal)}%`);
-            if (nomVal) queryObj = queryObj.ilike('nombres', `%${normalizeText(nomVal)}%`);
+            if (dniHcVal) {
+                queryObj = queryObj.or(`dni.ilike.%${dniHcVal}%,historia_clinica.ilike.%${dniHcVal}%`);
+            }
+            if (apeVal) {
+                queryObj = queryObj.ilike('apellidos', `%${normalizeText(apeVal)}%`);
+            }
+            if (seguroVal) {
+                queryObj = queryObj.eq('tipo_seguro', seguroVal.toUpperCase());
+            }
 
             const { data: pacientes, count, error } = await queryObj;
             if (error) throw error;
@@ -335,7 +338,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    const inputs = [filterDni, filterHc, filterApellidos, filterNombres];
+    const inputs = [filterDniHc, filterApellidos, filterSeguro];
     inputs.forEach(input => {
         input.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
@@ -345,16 +348,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     });
 
+    filterSeguro.addEventListener('change', () => {
+        currentPage = 1;
+        searchPacientes();
+    });
+
     btnSearch.addEventListener('click', () => {
         currentPage = 1;
         searchPacientes();
     });
 
     btnClear.addEventListener('click', () => {
-        filterDni.value = '';
-        filterHc.value = '';
+        filterDniHc.value = '';
         filterApellidos.value = '';
-        filterNombres.value = '';
+        filterSeguro.value = '';
         currentPage = 1;
         searchPacientes();
     });

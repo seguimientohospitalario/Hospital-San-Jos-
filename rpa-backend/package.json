@@ -1,16 +1,18 @@
 {
-  "name": "rpa-backend",
+  "name": "hjs-rpa-backend",
   "version": "1.0.0",
-  "description": "API Node.js para validacion de seguros en EsSalud",
+  "description": "Backend RPA para validación de seguros - Hospital San José",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
   "dependencies": {
-    "cors": "^2.8.5",
     "express": "^4.18.2",
-    "puppeteer": "^22.0.0",
-    "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-stealth": "^2.11.2"
+    "playwright": "^1.40.0",
+    "playwright-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3"
   }
 }

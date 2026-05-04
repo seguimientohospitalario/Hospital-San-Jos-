@@ -1,112 +1,105 @@
 const express = require('express');
 const cors = require('cors');
-const { validarSeguro } = require('./scraper');
+const { chromium } = require('playwright-extra');
+const stealth = require('puppeteer-extra-plugin-stealth')();
+
+chromium.use(stealth);
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ── RATE LIMITING EN MEMORIA (sin dependencias extra) ─────────────────────────
-const rateLimitMap = new Map();
-const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minuto
-const RATE_LIMIT_MAX = 5; // Max 5 requests por IP por minuto
+const PORT = process.env.PORT || 10000;
 
-const rateLimiter = (req, res, next) => {
-    const ip = req.ip || req.connection.remoteAddress || 'unknown';
-    const now = Date.now();
+// Configuración de Estrategia: Concurrencia y Batching
+const MAX_CONCURRENT = 3; 
+const BATCH_SIZE = 5;
 
-    if (!rateLimitMap.has(ip)) {
-        rateLimitMap.set(ip, []);
-    }
-
-    const timestamps = rateLimitMap.get(ip).filter(t => now - t < RATE_LIMIT_WINDOW_MS);
-    rateLimitMap.set(ip, timestamps);
-
-    if (timestamps.length >= RATE_LIMIT_MAX) {
-        const retryAfter = Math.ceil((timestamps[0] + RATE_LIMIT_WINDOW_MS - now) / 1000);
-        return res.status(429).json({
-            error: 'RATE_LIMIT',
-            message: `Demasiadas solicitudes. Intente en ${retryAfter} segundos.`,
-            retryAfter
+/**
+ * Función de Scraping para un solo DNI
+ * @param {string} dni 
+ * @param {import('playwright').Browser} browser 
+ */
+async function scrapeDni(dni, browser) {
+    const context = await browser.newContext({
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
+    });
+    const page = await context.newPage();
+    
+    try {
+        console.log(`[RPA] Iniciando consulta DNI: ${dni}`);
+        
+        // Navigation Timeout & Element Wait
+        await page.goto('https://currentTime.essalud.gob.pe/consulta', { 
+            waitUntil: 'networkidle', 
+            timeout: 30000 
         });
+
+        // Simulación de interacción humana (Action Delay)
+        await page.waitForTimeout(1000); 
+        await page.fill('input[formcontrolname="documento"]', dni);
+        await page.waitForTimeout(500);
+        await page.click('button[type="submit"]');
+
+        // Esperar resultado
+        await page.waitForSelector('.resultado-container', { timeout: 15000 });
+        
+        const data = await page.evaluate(() => {
+            const seguro = document.querySelector('.tipo-seguro')?.innerText || 'NO ENCONTRADO';
+            const estado = document.querySelector('.estado-acreditacion')?.innerText || 'DESCONOCIDO';
+            return { seguro, estado };
+        });
+
+        return { dni, success: true, ...data };
+    } catch (error) {
+        console.error(`[RPA] Error DNI ${dni}:`, error.message);
+        return { dni, success: false, error: error.message };
+    } finally {
+        await context.close();
     }
+}
 
-    timestamps.push(now);
-    next();
-};
+app.post('/validate-batch', async (req, res) => {
+    const { dnis } = req.body;
+    if (!Array.isArray(dnis)) return res.status(400).json({ error: 'Lista de DNIs requerida' });
 
-// Limpiar entradas expiradas del rate limiter cada 5 minutos
-setInterval(() => {
-    const now = Date.now();
-    for (const [ip, timestamps] of rateLimitMap.entries()) {
-        const filtered = timestamps.filter(t => now - t < RATE_LIMIT_WINDOW_MS);
-        if (filtered.length === 0) {
-            rateLimitMap.delete(ip);
-        } else {
-            rateLimitMap.set(ip, filtered);
+    console.log(`[RPA] Recibida solicitud batch para ${dnis.length} pacientes`);
+
+    const browser = await chromium.launch({
+        headless: true,
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--single-process',
+            '--disable-gpu'
+        ]
+    });
+
+    try {
+        const results = [];
+        // Estrategia de Batching: Procesa de 5 en 5 (evita OOM en 512MB)
+        for (let i = 0; i < dnis.length; i += BATCH_SIZE) {
+            const batch = dnis.slice(i, i + BATCH_SIZE);
+            console.log(`[RPA] Procesando lote ${Math.floor(i/BATCH_SIZE) + 1} (${batch.length} pacientes)`);
+            
+            // Concurrencia interna dentro del lote limitada por MAX_CONCURRENT
+            const batchPromises = batch.map(dni => scrapeDni(dni, browser));
+            const batchResults = await Promise.all(batchPromises);
+            results.push(...batchResults);
         }
-    }
-}, 5 * 60 * 1000);
 
-// ── TIMEOUT MIDDLEWARE ────────────────────────────────────────────────────────
-const REQUEST_TIMEOUT_MS = 60000; // Aumentado a 60 segundos para dar margen al scraper
-
-const timeoutMiddleware = (req, res, next) => {
-    const timer = setTimeout(() => {
-        if (!res.headersSent) {
-            res.status(504).json({
-                error: 'TIMEOUT',
-                message: 'La solicitud excedió el tiempo máximo de espera (60s).'
-            });
-        }
-    }, REQUEST_TIMEOUT_MS);
-
-    res.on('finish', () => clearTimeout(timer));
-    res.on('close', () => clearTimeout(timer));
-    next();
-};
-
-// ── ENDPOINT PRINCIPAL ────────────────────────────────────────────────────────
-app.post('/api/validar-seguro', rateLimiter, timeoutMiddleware, async (req, res) => {
-    const t0 = Date.now();
-    const { dni, codigo_verificacion, fecha_nacimiento } = req.body;
-
-    if (!dni || !codigo_verificacion || !fecha_nacimiento) {
-        return res.status(400).json({ error: 'Faltan parámetros requeridos (dni, codigo_verificacion, fecha_nacimiento)' });
-    }
-
-    // Normalizar formato de fecha a DD/MM/YYYY requerido por EsSalud
-    let fecha_formateada = fecha_nacimiento;
-    if (fecha_nacimiento.includes('-')) {
-        const parts = fecha_nacimiento.split('-');
-        if (parts[0].length === 4) fecha_formateada = `${parts[2]}/${parts[1]}/${parts[0]}`;
-    } else if (fecha_nacimiento.includes('/')) {
-        const parts = fecha_nacimiento.split('/');
-        if (parts[0].length === 4) fecha_formateada = `${parts[2]}/${parts[1]}/${parts[0]}`;
-    }
-
-    console.log(`[${new Date().toISOString()}] [API] Solicitud DNI: ${dni} | Fecha: ${fecha_formateada}`);
-
-    const result = await validarSeguro(dni, codigo_verificacion, fecha_formateada);
-
-    const elapsed = Date.now() - t0;
-    console.log(`[${new Date().toISOString()}] [API] Respuesta DNI: ${dni} → ${result.success ? 'OK' : 'FALLO'} (${elapsed}ms total)`);
-
-    if (res.headersSent) return; // Evitar doble respuesta si timeout ya respondió
-
-    if (result.success) {
-        res.json({ success: true, tipo_seguro_extraido: result.data });
-    } else {
-        res.status(500).json({ success: false, error: result.error, message: result.message });
+        res.json({ success: true, results });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    } finally {
+        await browser.close();
     }
 });
 
-// Endpoint de health check — útil para el keep-alive de Render
-app.get('/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`[${new Date().toISOString()}] RPA Backend escuchando en el puerto ${PORT}`);
+    console.log(`RPA Backend (Playwright + Stealth) escuchando en puerto ${PORT}`);
 });

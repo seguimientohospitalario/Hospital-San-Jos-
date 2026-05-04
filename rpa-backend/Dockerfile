@@ -1,23 +1,20 @@
-FROM ghcr.io/puppeteer/puppeteer:latest
+# Usar imagen oficial de Node con dependencias de Playwright
+FROM mcr.microsoft.com/playwright:v1.40.0-focal
 
-# Cambiar a usuario root temporalmente
-USER root
-
-# Crear la carpeta de la app y darle propiedad absoluta al usuario pptruser
-RUN mkdir -p /app && chown -R pptruser:pptruser /app
-
+# Directorio de trabajo
 WORKDIR /app
 
-# Copiar los archivos con la propiedad correcta
-COPY --chown=pptruser:pptruser package*.json ./
-COPY --chown=pptruser:pptruser . .
+# Copiar archivos de dependencia
+COPY package*.json ./
 
-# Volver al usuario seguro de puppeteer
-USER pptruser
+# Instalar dependencias (solo producción para ahorrar espacio)
+RUN npm install --only=production
 
-# Instalar dependencias (ahora sí tiene permisos para crear node_modules)
-RUN npm install
+# Copiar código fuente
+COPY . .
 
-EXPOSE 3000
+# Exponer puerto para Koyeb
+EXPOSE 10000
 
-CMD ["node", "server.js"]
+# Comando de inicio
+CMD ["npm", "start"]

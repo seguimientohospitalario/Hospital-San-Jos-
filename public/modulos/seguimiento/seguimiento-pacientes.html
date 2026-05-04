@@ -17,24 +17,28 @@
             <!-- SECCION DE FILTROS (DISEÑO VERIFICACION) -->
             <div class="search-filters-container" id="search-filters">
                 <div class="filter-group">
-                    <label>DNI</label>
-                    <input type="text" id="filter-dni" class="filter-input" placeholder="Buscar DNI..." maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-                </div>
-                <div class="filter-group">
-                    <label>Historia Cl&#237;nica</label>
-                    <input type="text" id="filter-hc" class="filter-input" placeholder="Buscar N&#186; HC..." oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                    <label>DNI o Historia Cl&#237;nica</label>
+                    <input type="text" id="filter-dni-hc" class="filter-input" placeholder="Buscar DNI o HC..." oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                 </div>
                 <div class="filter-group">
                     <label>Apellidos</label>
                     <input type="text" id="filter-apellidos" class="filter-input" placeholder="Buscar por apellidos...">
                 </div>
                 <div class="filter-group">
-                    <label>Nombres</label>
-                    <input type="text" id="filter-nombres" class="filter-input" placeholder="Buscar por nombres...">
+                    <label>Tipo de Seguro</label>
+                    <select id="filter-seguro" class="filter-input">
+                        <option value="">TODOS</option>
+                        <option value="EsSalud">ESSALUD</option>
+                        <option value="SIS">SIS</option>
+                        <option value="Saludpol">SALUDPOL</option>
+                        <option value="SOAT">SOAT</option>
+                        <option value="Privado">PRIVADO</option>
+                        <option value="Otros">OTROS</option>
+                    </select>
                 </div>
                 <div style="display: flex; gap: 10px;">
                     <button class="btn-module primary" id="btn-search" style="padding: 10px 20px;"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
-                    <button class="btn-module" id="btn-clear" style="padding: 10px 20px; background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; font-weight: 500;">Limpiar Filtro</button>
+                    <button class="btn-module btn-clear-hover" id="btn-clear" style="padding: 8px 15px; background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; font-weight: 500;">Limpiar Filtro</button>
                 </div>
             </div>
 

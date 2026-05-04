@@ -63,15 +63,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 </a>
             </div>
 
-            <div class="nav-item has-sub ${currentPage.includes('consulta-rapida') || currentPage.includes('consulta-masiva') || currentPage.includes('validacion-global') ? 'active' : ''}">
+            <div class="nav-item has-sub ${currentPage.includes('consulta-rapida') ? 'active' : ''}">
                 <div class="nav-link">
                     <i class="fa-solid fa-robot"></i>
                     <span>Consultas</span>
                 </div>
                 <div class="sub-menu">
                     <a href="${bp}modulos/consultas/consulta-rapida.html" class="${currentPage.includes('consulta-rapida') ? 'selected' : ''}">Consulta Rápida</a>
-                    <a href="${bp}modulos/consultas/consulta-masiva.html" class="${currentPage.includes('consulta-masiva') ? 'selected' : ''}">Consulta Masiva</a>
-                    <a href="${bp}modulos/consultas/validacion-global.html" class="${currentPage.includes('validacion-global') ? 'selected' : ''}">Validación Global</a>
                 </div>
             </div>
 
@@ -114,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         return '<span class="welcome-dark">REGISTRO DE </span><span class="welcome-celeste">NUEVOS PACIENTES</span>';
                     } else if (currentPage === 'seguimiento-pacientes.html' || currentPage === 'verificacion-paciente.html' || currentPage === 'detalle-paciente.html') {
                         return '<span class="welcome-dark">BÚSQUEDA / VERIFICACIÓN / </span><span class="welcome-celeste">ACTUALIZACIÓN</span>';
-                    } else if (currentPage === 'consulta-rapida.html' || currentPage === 'consulta-masiva.html' || currentPage === 'validacion-global.html') {
+                    } else if (currentPage === 'consulta-rapida.html') {
                         return '<span class="welcome-dark">CONSULTA A WEB </span><span class="welcome-celeste">DONDE ME ATIENDO</span>';
                     } else if (currentPage === 'reportes.html') {
                         return '<span class="welcome-dark">EXCEL / </span><span class="welcome-celeste">PDF</span>';
