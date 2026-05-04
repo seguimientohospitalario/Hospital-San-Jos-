@@ -3,8 +3,8 @@ const StealthPlugin = require('puppeteer-extra-plugin-stealth');
 puppeteer.use(StealthPlugin());
 
 const ESSALUD_URL = 'https://dondemeatiendo.essalud.gob.pe/#/consulta';
-const BROWSER_MAX_AGE_MS = 8 * 60 * 1000;  // Reciclar cada 8 min (evita memory leaks)
-const POOL_SIZE = parseInt(process.env.POOL_SIZE || '2', 10);
+const BROWSER_MAX_AGE_MS = 10 * 60 * 1000;  // Reciclar cada 10 min
+const POOL_SIZE = parseInt(process.env.POOL_SIZE || '1', 10); // Reducido a 1 por defecto para Render Free
 const MAX_RETRIES = 2;
 
 // ── SINGLETON DE BROWSER ──────────────────────────────────────────────────────
@@ -25,7 +25,6 @@ async function getBrowser() {
     }
 
     if (browserInstance) {
-        // Limpiar pool antes de reciclar
         for (const p of warmPool) {
             try { await p.close(); } catch {}
         }
@@ -47,7 +46,6 @@ async function getBrowser() {
             '--single-process',
             '--disable-background-timer-throttling',
             '--memory-pressure-off',
-            // Optimizaciones adicionales para 512MB Render
             '--disable-features=TranslateUI',
             '--disable-component-update',
             '--disable-backgrounding-occluded-windows',
@@ -59,7 +57,6 @@ async function getBrowser() {
     browserLaunchTime = Date.now();
     console.log(`[${new Date().toISOString()}] [Browser] Listo.`);
 
-    // Precalentar el pool al arrancar el browser
     _fillPool();
     return browserInstance;
 }
@@ -68,23 +65,18 @@ async function getBrowser() {
 const warmPool = [];
 let fillingPool = false;
 
-/**
- * Navega una página hacia el formulario EsSalud bloqueando recursos innecesarios.
- */
 async function createWarmPage() {
+    let page = null;
     try {
         const browser = browserInstance;
         if (!browser) return null;
 
-        const page = await browser.newPage();
-
-        // Timeout global por defecto
-        page.setDefaultTimeout(15000);
-
-        // Viewport mínimo para reducir consumo de memoria
+        page = await browser.newPage();
+        
+        // Timeouts más largos para entornos lentos
+        page.setDefaultTimeout(35000);
         await page.setViewport({ width: 800, height: 600 });
 
-        // Bloquear recursos innecesarios: imágenes, fuentes, media, CSS
         await page.setRequestInterception(true);
         page.on('request', req => {
             const type = req.resourceType();
@@ -95,21 +87,20 @@ async function createWarmPage() {
             }
         });
 
-        await page.goto(ESSALUD_URL, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        console.log(`[${new Date().toISOString()}] [Pool] Navegando a EsSalud...`);
+        await page.goto(ESSALUD_URL, { waitUntil: 'domcontentloaded', timeout: 45000 });
 
-        // Espera inteligente: verificar que el campo de formulario está listo
-        await page.waitForSelector('input[formcontrolname="documento"]', { timeout: 12000 });
+        // Esperar a que el selector esté listo con un margen amplio
+        await page.waitForSelector('input[formcontrolname="documento"]', { timeout: 30000 });
 
         return page;
     } catch (err) {
         console.warn(`[${new Date().toISOString()}] [Pool] Error precalentando página:`, err.message);
+        if (page) try { await page.close(); } catch {}
         return null;
     }
 }
 
-/**
- * Rellena el pool hasta POOL_SIZE en background (no bloquea el request actual).
- */
 async function _fillPool() {
     if (fillingPool) return;
     fillingPool = true;
@@ -122,15 +113,14 @@ async function _fillPool() {
             } else {
                 break;
             }
+            // Pequeño respiro para el CPU entre creaciones
+            await new Promise(r => setTimeout(r, 2000));
         }
     } finally {
         fillingPool = false;
     }
 }
 
-/**
- * Obtiene una página del pool o crea una nueva.
- */
 async function getPage() {
     await getBrowser();
 
@@ -141,23 +131,21 @@ async function getPage() {
         return { page, wasWarm: true };
     }
 
-    console.log(`[${new Date().toISOString()}] [Pool] Pool vacío, creando página en el momento...`);
+    console.log(`[${new Date().toISOString()}] [Pool] Pool vacío o cargando, creando página de emergencia...`);
     const page = await createWarmPage();
-    if (!page) throw new Error('No se pudo crear una página de scraping');
+    if (!page) throw new Error('No se pudo crear una página de scraping (Timeout en carga inicial)');
     return { page, wasWarm: false };
 }
 
-/**
- * Recicla una página usada o la cierra si el pool ya está lleno.
- */
 async function recyclePage(page) {
+    if (!page || page.isClosed()) return;
     if (warmPool.length >= POOL_SIZE) {
         try { await page.close(); } catch {}
         return;
     }
     try {
-        await page.goto(ESSALUD_URL, { waitUntil: 'domcontentloaded', timeout: 20000 });
-        await page.waitForSelector('input[formcontrolname="documento"]', { timeout: 10000 });
+        await page.goto(ESSALUD_URL, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.waitForSelector('input[formcontrolname="documento"]', { timeout: 20000 });
         warmPool.push(page);
         console.log(`[${new Date().toISOString()}] [Pool] Página reciclada. Pool: ${warmPool.length}/${POOL_SIZE}`);
     } catch {
@@ -177,34 +165,25 @@ async function validarSeguro(dni, cui, fecha_nacimiento) {
 
         try {
             ({ page, wasWarm } = await getPage());
-            console.log(`[${new Date().toISOString()}] [Scraper] Intento ${attempt}/${MAX_RETRIES} DNI:${dni} | página ${wasWarm ? 'caliente ✓' : 'nueva'}`);
+            console.log(`[${new Date().toISOString()}] [Scraper] Intento ${attempt}/${MAX_RETRIES} DNI:${dni} | ${wasWarm ? 'Página caliente ✓' : 'Página nueva'}`);
 
-            // Escribir en los campos usando evaluate (más rápido que page.type en Render)
-            await page.evaluate((d, c, f) => {
-                const setVal = (selector, value) => {
-                    const el = document.querySelector(selector);
-                    if (!el) return;
-                    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-                        window.HTMLInputElement.prototype, 'value'
-                    ).set;
-                    nativeInputValueSetter.call(el, value);
-                    el.dispatchEvent(new Event('input', { bubbles: true }));
-                    el.dispatchEvent(new Event('change', { bubbles: true }));
-                };
-                setVal('input[formcontrolname="documento"]', d);
-                setVal('input[formcontrolname="digito"]', c);
-                setVal('input[formcontrolname="fechaNacimiento"]', f);
-            }, dni, cui, fecha_nacimiento);
+            // Usar page.type para mayor realismo en entornos lentos
+            await page.click('input[formcontrolname="documento"]', { clickCount: 3 });
+            await page.keyboard.press('Backspace');
+            await page.type('input[formcontrolname="documento"]', dni, { delay: 30 });
 
-            // Espera inteligente: verificar que Angular procesó los inputs
-            await page.waitForFunction(() => {
-                const doc = document.querySelector('input[formcontrolname="documento"]');
-                return doc && doc.value && doc.value.length > 0;
-            }, { timeout: 3000 }).catch(() => {});
+            await page.click('input[formcontrolname="digito"]', { clickCount: 3 });
+            await page.keyboard.press('Backspace');
+            await page.type('input[formcontrolname="digito"]', cui, { delay: 30 });
 
-            // Click checkbox de política de privacidad
+            await page.click('input[formcontrolname="fechaNacimiento"]', { clickCount: 3 });
+            await page.keyboard.press('Backspace');
+            await page.type('input[formcontrolname="fechaNacimiento"]', fecha_nacimiento, { delay: 30 });
+
+            // Aceptar política
             try {
-                await page.click('input[formcontrolname="politicaPrivacidad"]');
+                const check = await page.$('input[formcontrolname="politicaPrivacidad"]');
+                if (check) await check.click();
             } catch {
                 await page.evaluate(() => {
                     const span = document.querySelector('.texto-acepto');
@@ -212,48 +191,37 @@ async function validarSeguro(dni, cui, fecha_nacimiento) {
                 });
             }
 
-            // Esperar modal activamente (con timeout corto)
+            // Manejo de Modal "Aceptar"
             try {
-                await page.waitForSelector('.mat-mdc-dialog-content, .mat-dialog-content, .modal-body', { timeout: 4000 });
-            } catch {
-                // Modal puede no aparecer si fue aceptado antes
-            }
-
-            // Scroll + aceptar modal
-            try {
+                await page.waitForSelector('.mat-mdc-dialog-content, .mat-dialog-content, .modal-body', { timeout: 6000 });
                 await page.evaluate(async () => {
-                    const modalBody = document.querySelector('.mat-mdc-dialog-content, .mat-dialog-content, .modal-body');
-                    if (modalBody) {
-                        modalBody.scrollTo(0, modalBody.scrollHeight + 5000);
-                        await new Promise(r => setTimeout(r, 500));
+                    const modal = document.querySelector('.mat-mdc-dialog-content, .mat-dialog-content, .modal-body');
+                    if (modal) {
+                        modal.scrollTo(0, modal.scrollHeight + 1000);
+                        await new Promise(r => setTimeout(r, 800));
                     }
                     const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Aceptar'));
                     if (btn && !btn.disabled) btn.click();
                 });
-            } catch {}
-
-            // Espera inteligente: que el modal desaparezca
-            try {
-                await page.waitForFunction(
-                    () => !document.querySelector('.mat-mdc-dialog-content, .mat-dialog-content'),
-                    { timeout: 3000 }
-                );
-            } catch {
-                // Continuar aunque el modal no desaparezca
+                // Esperar a que el modal desaparezca
+                await new Promise(r => setTimeout(r, 1000));
+            } catch (e) {
+                // Modal puede no salir o ya haber sido aceptado
             }
 
-            // Click en Consultar
+            // Click Consultar
             try {
-                const btnHandle = await page.evaluateHandle(() =>
+                const btnConsultar = await page.evaluateHandle(() =>
                     Array.from(document.querySelectorAll('button'))
                         .find(b => b.textContent.toLowerCase().includes('consultar'))
                 );
-                await btnHandle.click();
+                if (btnConsultar) await btnConsultar.click();
+                else await page.click('button.ess-btn-primary');
             } catch {
                 try { await page.click('button.ess-btn-primary'); } catch {}
             }
 
-            // Espera inteligente: resultado o error (sin delay fijo)
+            // Resultado u Resultado Error
             const outcome = await page.waitForFunction(() => {
                 const textL = document.body.innerText.toLowerCase();
                 if (document.querySelector('.table-responsive, app-resultado')
@@ -263,87 +231,73 @@ async function validarSeguro(dni, cui, fecha_nacimiento) {
                 if (swal && swal.innerText.trim()) return 'error_swal';
                 if (textL.includes('incorrectos') || textL.includes('no encontrado') || textL.includes('captcha')) return 'error_text';
                 return false;
-            }, { timeout: 15000 }).then(r => r.jsonValue()).catch(() => 'timeout');
+            }, { timeout: 40000 }).then(r => r.jsonValue()).catch(() => 'timeout');
 
             console.log(`[${new Date().toISOString()}] [Scraper] DNI:${dni} → ${outcome} (${Date.now() - t0}ms)`);
+
+            if (outcome === 'success') {
+                const bodyText = await page.evaluate(() => document.body.innerText);
+                const lines = bodyText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                let afiliado_a = null;
+
+                for (let i = 0; i < lines.length; i++) {
+                    const ll = lines[i].toLowerCase();
+                    if (ll.includes('no tiene derecho de cobertura')) {
+                        recyclePage(page).catch(() => {});
+                        return { success: true, data: 'NO TIENE DERECHO DE COBERTURA' };
+                    }
+                    if (ll.includes('afiliado a')) {
+                        if (ll.includes(':')) {
+                            const parts = lines[i].split(':');
+                            if (parts.length > 1 && parts[1].trim().length > 0) {
+                                afiliado_a = parts[1].trim(); break;
+                            }
+                        }
+                        if (i + 1 < lines.length) {
+                            afiliado_a = lines[i + 1].trim();
+                            if (!afiliado_a.includes(':') && afiliado_a.length < 50) break;
+                        }
+                    }
+                }
+                recyclePage(page).catch(() => {});
+                return { success: true, data: afiliado_a || 'Sin información detallada' };
+            }
 
             if (outcome === 'error_swal' || outcome === 'error_text') {
                 const errorText = await page.evaluate(() => {
                     const swal = document.querySelector('.swal2-html-container');
                     if (swal) return swal.innerText;
                     for (const el of document.querySelectorAll('mat-error, .alert, span, div')) {
-                        if (el.innerText && (
-                            el.innerText.toLowerCase().includes('incorrectos') ||
-                            el.innerText.toLowerCase().includes('no encontrado') ||
-                            el.innerText.toLowerCase().includes('captcha')
-                        )) return el.innerText;
+                        const txt = (el.innerText || '').toLowerCase();
+                        if (txt.includes('incorrectos') || txt.includes('no encontrado') || txt.includes('captcha')) return el.innerText;
                     }
-                    return 'Datos incorrectos o paciente no encontrado';
+                    return 'Error en la consulta';
                 });
 
-                // No reintentar errores de CAPTCHA o datos inválidos
-                if (errorText.toLowerCase().includes('captcha')) {
-                    recyclePage(page).catch(() => {});
-                    return { success: false, error: 'CAPTCHA_REQUIRED', message: 'Se detectó CAPTCHA. Requiere validación manual.' };
-                }
                 recyclePage(page).catch(() => {});
+                if (errorText.toLowerCase().includes('captcha')) {
+                    return { success: false, error: 'CAPTCHA_REQUIRED', message: 'Se detectó CAPTCHA' };
+                }
                 return { success: false, error: 'CONSULTA_ERROR', message: errorText };
             }
 
-            if (outcome === 'timeout') {
-                // Reintentar en timeouts (error transitorio)
-                console.warn(`[${new Date().toISOString()}] [Scraper] Timeout DNI:${dni}, intento ${attempt}/${MAX_RETRIES}`);
-                try { await page.close(); } catch {}
-                page = null;
-                lastError = { success: false, error: 'TIMEOUT', message: 'Datos incorrectos o tiempo de espera agotado' };
-                continue; // Reintentar
-            }
-
-            // Extraer resultado
-            const bodyText = await page.evaluate(() => document.body.innerText);
-            const lines = bodyText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-            let afiliado_a = null;
-
-            for (let i = 0; i < lines.length; i++) {
-                const ll = lines[i].toLowerCase();
-                if (ll.includes('no tiene derecho de cobertura')) {
-                    recyclePage(page).catch(() => {});
-                    return { success: true, data: 'NO TIENE DERECHO DE COBERTURA' };
-                }
-                if (ll.includes('afiliado a')) {
-                    if (ll.includes(':')) {
-                        const parts = lines[i].split(':');
-                        if (parts.length > 1 && parts[1].trim().length > 0) {
-                            afiliado_a = parts[1].trim(); break;
-                        }
-                    }
-                    if (i + 1 < lines.length) {
-                        afiliado_a = lines[i + 1].trim();
-                        if (!afiliado_a.includes(':') && afiliado_a.length < 50) break;
-                    }
-                }
-            }
-
-            recyclePage(page).catch(() => {});
-            return { success: true, data: afiliado_a };
+            // Si es timeout, cerramos y reintentamos
+            throw new Error('Tiempo de espera agotado esperando resultados');
 
         } catch (error) {
             console.error(`[${new Date().toISOString()}] [Scraper] Error intento ${attempt}:`, error.message);
-            if (page) {
-                try { await page.close(); } catch {}
-            }
+            if (page) try { await page.close(); } catch {}
             lastError = { success: false, error: 'SCRAPER_ERROR', message: error.message };
-
-            // Solo reintentar en errores de navegación/timeout, no en errores lógicos
+            
             if (attempt < MAX_RETRIES) {
-                console.log(`[${new Date().toISOString()}] [Scraper] Reintentando DNI:${dni}...`);
-                continue;
+                console.log(`[${new Date().toISOString()}] [Scraper] Reintentando en 3s...`);
+                await new Promise(r => setTimeout(r, 3000));
             }
         }
     }
 
-    // Todos los intentos fallaron
-    return lastError || { success: false, error: 'SCRAPER_ERROR', message: 'Todos los intentos fallaron' };
+    return lastError || { success: false, error: 'SCRAPER_ERROR', message: 'Fallo tras reintentos' };
 }
 
 module.exports = { validarSeguro };
+

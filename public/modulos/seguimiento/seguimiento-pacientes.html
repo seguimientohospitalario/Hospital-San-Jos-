@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>B&#250;squeda Pacientes - Hospital San Jos&#233;</title>
+    <title>Seguimiento de Pacientes - Hospital San Jos&#233;</title>
     <link rel="stylesheet" href="../../css/styles.css">
     <link rel="stylesheet" href="../../css/registro-pacientes.css">
-    <link rel="stylesheet" href="../../css/verificacion-paciente.css">
+    <link rel="stylesheet" href="../../css/seguimiento-pacientes.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -14,74 +14,160 @@
     <div class="main-wrapper">
         <main class="page-content" id="page-content">
 
-            <!-- BARRA DE OPERACIONES -->
-            <div class="module-commands">
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <div class="global-search-box" style="width: 380px; display: flex; align-items: center; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0; padding: 0 15px;">
-                        <i class="fa-solid fa-magnifying-glass" style="color: #64748b;"></i>
-                        <input type="text" id="search-input" placeholder="Buscar por DNI, apellidos o nombres..." class="global-search-input" style="border: none; padding: 12px 10px; outline: none; flex: 1; min-width: 0;">
-                    </div>
-                    <button class="btn-module primary" id="btn-search" style="padding: 10px 20px;"><i class="fa-solid fa-search"></i> Buscar</button>
-                    <button class="btn-module btn-clear-hover" id="btn-clear" style="background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; padding: 8px 15px; font-weight: 500;">Limpiar Filtro</button>
+            <!-- SECCION DE FILTROS (DISEÑO VERIFICACION) -->
+            <div class="search-filters-container" id="search-filters">
+                <div class="filter-group">
+                    <label>DNI</label>
+                    <input type="text" id="filter-dni" class="filter-input" placeholder="Buscar DNI..." maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                </div>
+                <div class="filter-group">
+                    <label>Historia Cl&#237;nica</label>
+                    <input type="text" id="filter-hc" class="filter-input" placeholder="Buscar N&#186; HC..." oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                </div>
+                <div class="filter-group">
+                    <label>Apellidos</label>
+                    <input type="text" id="filter-apellidos" class="filter-input" placeholder="Buscar por apellidos...">
+                </div>
+                <div class="filter-group">
+                    <label>Nombres</label>
+                    <input type="text" id="filter-nombres" class="filter-input" placeholder="Buscar por nombres...">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn-module primary" id="btn-search" style="padding: 10px 20px;"><i class="fa-solid fa-magnifying-glass"></i> Buscar</button>
+                    <button class="btn-module" id="btn-clear" style="padding: 10px 20px; background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; font-weight: 500;">Limpiar Filtro</button>
                 </div>
             </div>
 
-            <!-- TABLA DE PACIENTES -->
-            <div id="view-lista" style="margin-top: 20px;">
+            <!-- LISTA DE RESULTADOS -->
+            <div id="view-resultados" style="margin-top: 20px;">
                 <div class="data-table-container">
                     <div id="loading-indicator" style="display: none; text-align: center; padding: 40px; color: #3b82f6;">
                         <i class="fa-solid fa-circle-notch fa-spin" style="font-size: 2rem;"></i>
                         <p style="margin-top: 10px; font-weight: 500;">Cargando pacientes...</p>
                     </div>
-
-                    <table class="data-table" id="table-element">
+                    <table class="data-table" id="table-pacientes" style="display: none;">
                         <thead>
                             <tr>
                                 <th>DNI</th>
                                 <th>Paciente</th>
                                 <th>N&#186; Historia</th>
                                 <th>Tipo de Seguro</th>
+                                <th>Servicio</th>
                                 <th>Condici&#243;n</th>
-                                <th>D&#237;as Hospitalizado</th>
                                 <th style="text-align: center; width: 100px;">Acci&#243;n</th>
                             </tr>
                         </thead>
-                        <tbody id="tabla-pacientes">
-                        </tbody>
+                        <tbody id="tbody-pacientes"></tbody>
                     </table>
                 </div>
-                <div id="pagination-container" class="pagination-controls"></div>
+                <!-- Paginación opcional si la implementas en JS -->
+                <div id="pagination-container" class="pagination-controls" style="margin-top: 20px;"></div>
             </div>
 
-            <!-- SECCION DE HISTORIAL (MISMA PAGINA) -->
-            <div id="view-history-inline" style="display: none; margin-top: 30px; border-top: 2px solid #e2e8f0; padding-top: 30px;">
+            <!-- SECCION DE TIMELINE (OCULTA POR DEFECTO - DISEÑO VERIFICACION) -->
+            <div id="view-timeline" style="display: none; margin-top: 20px; animation: slideUp 0.4s ease-out;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h3 id="history-patient-name" style="font-weight: 800; color: #0f172a;">HISTORIAL CLÍNICO</h3>
-                    <button class="btn-module" id="btn-close-history" style="background: #f1f5f9; color: #64748b;"><i class="fa-solid fa-xmark"></i> Cerrar Historial</button>
-                </div>
-
-                <!-- KPIs -->
-                <div id="history-kpis" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 25px;">
-                    <!-- Cargado por JS -->
-                </div>
-
-                <!-- Botones de Registros -->
-                <div id="history-records-buttons" style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
-                    <!-- Cargado por JS -->
-                </div>
-
-                <!-- Timeline renderizada aquí -->
-                <div class="timeline-section" style="background: #f8fafc; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0;">
-                    <div id="history-timeline-container" class="timeline-container">
-                        <!-- Cargado por JS -->
+                    <div>
+                        <button id="btn-back-to-list" class="btn-module shadow" style="background: white; color: #1e293b; border: 1px solid #e2e8f0; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;">
+                            <i class="fa-solid fa-arrow-left"></i> Volver a la Lista
+                        </button>
                     </div>
+                </div>
+
+                <!-- Banner del paciente -->
+                <div class="patient-info-banner">
+                    <div class="banner-details">
+                        <h4 id="banner-paciente-nombre">PACIENTE</h4>
+                        <p id="banner-paciente-info">DNI | HC | SERVICIO</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div id="banner-dias" class="dias-badge">0 d&#237;as</div>
+                        <div id="banner-condicion" class="condicion-badge">Hospitalizado</div>
+                    </div>
+                </div>
+
+                <!-- Timeline -->
+                <div class="timeline-section">
+                    <div class="timeline-header">
+                        <h3><i class="fa-solid fa-timeline" style="color: #3b82f6; margin-right: 10px;"></i>L&#237;nea de Tiempo Cl&#237;nica</h3>
+                    </div>
+                    <div class="timeline-container" id="timeline-container">
+                        <p class="timeline-empty" id="timeline-empty" style="display: none;">No hay eventos registrados para este paciente.</p>
+                        <!-- Eventos cargados por JS -->
+                    </div>
+                </div>
+
+                <!-- Formulario de nuevo evento -->
+                <div class="event-form-section">
+                    <h3 class="event-form-title"><i class="fa-solid fa-plus-circle" style="color: #3b82f6; margin-right: 10px;"></i>Registrar Nuevo Evento</h3>
+                    <form id="event-form" class="event-form">
+                        <div class="event-form-grid">
+                            <div class="input-stacked">
+                                <label>Tipo de Evento *</label>
+                                <select id="evento-tipo" class="standard-input" required>
+                                    <option value="" disabled selected hidden>Seleccione</option>
+                                    <option value="Cambio Cobertura">Cambio Cobertura</option>
+                                    <option value="Cambio de Servicio">Cambio de Servicio</option>
+                                    <option value="Alta">Alta</option>
+                                    <option value="Fallecido">Fallecido</option>
+                                </select>
+                            </div>
+                            <!-- CAMPOS DINAMICOS -->
+                            <div class="input-stacked" id="grupo-servicio-de" style="display: none;">
+                                <label>De (Servicio Actual) *</label>
+                                <input type="text" id="evento-servicio-de" class="standard-input" readonly style="background: #f8fafc;">
+                            </div>
+                            <div class="input-stacked" id="grupo-servicio-hacia" style="display: none;">
+                                <label>Hacia (Nuevo Servicio) *</label>
+                                <select id="evento-servicio-hacia" class="standard-input">
+                                    <option value="" disabled selected hidden>Seleccione</option>
+                                    <option value="Shock trauma">Shock trauma</option>
+                                    <option value="Salud mental">Salud mental</option>
+                                    <option value="UVI">UVI</option>
+                                    <option value="Medicina">Medicina</option>
+                                    <option value="Cirugía">Cirugía</option>
+                                    <option value="Pediatría">Pediatría</option>
+                                    <option value="Neonatología">Neonatología</option>
+                                    <option value="Ginecología">Ginecología</option>
+                                    <option value="Puerperio">Puerperio</option>
+                                </select>
+                            </div>
+                            <div class="input-stacked" id="grupo-nuevo-seguro" style="display: none;">
+                                <label>Nuevo Tipo de Seguro *</label>
+                                <select id="evento-nuevo-seguro" class="standard-input">
+                                    <option value="" disabled selected hidden>Seleccione</option>
+                                    <option value="EsSalud">EsSalud</option>
+                                    <option value="SIS">SIS</option>
+                                    <option value="Saludpol">Saludpol</option>
+                                    <option value="SOAT">SOAT</option>
+                                    <option value="Privado">Privado</option>
+                                    <option value="Otros">Otros</option>
+                                </select>
+                            </div>
+                            <div class="input-stacked" id="grupo-nuevo-seguro-otros" style="display: none;">
+                                <label>Especificar Seguro</label>
+                                <input type="text" id="evento-nuevo-seguro-otros" class="standard-input">
+                            </div>
+                            <div class="input-stacked" style="grid-column: 1 / -1;">
+                                <label>Detalle / Observaci&#243;n</label>
+                                <textarea id="evento-detalle" class="standard-input" rows="2" placeholder="Descripci&#243;n breve del evento..."></textarea>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="submit" class="btn-module primary" id="btn-registrar-evento" style="padding: 12px 25px;">
+                                <i class="fa-solid fa-save"></i>
+                                <span id="registrar-text">Registrar Evento</span>
+                                <i id="registrar-spinner" class="fa-solid fa-circle-notch fa-spin" style="display:none; margin-left:8px;"></i>
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
 
             <!-- Toast -->
             <div id="toast" class="toast-success" style="display: none;">
                 <i class="fa-solid fa-check-circle" id="toast-icon"></i>
-                <span id="toast-text"></span>
+                <span id="toast-text">Actualizado correctamente</span>
             </div>
 
         </main>
@@ -89,7 +175,6 @@
 
     <script src="../../js/supabase-config.js"></script>
     <script src="../../js/layout.js"></script>
-    <script src="../../js/dynamic-table.js"></script>
     <script src="../../js/seguimiento-pacientes.js"></script>
 </body>
 </html>

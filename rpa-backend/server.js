@@ -49,14 +49,14 @@ setInterval(() => {
 }, 5 * 60 * 1000);
 
 // ── TIMEOUT MIDDLEWARE ────────────────────────────────────────────────────────
-const REQUEST_TIMEOUT_MS = 35000; // 35 segundos
+const REQUEST_TIMEOUT_MS = 60000; // Aumentado a 60 segundos para dar margen al scraper
 
 const timeoutMiddleware = (req, res, next) => {
     const timer = setTimeout(() => {
         if (!res.headersSent) {
             res.status(504).json({
                 error: 'TIMEOUT',
-                message: 'La solicitud excedió el tiempo máximo de espera (35s).'
+                message: 'La solicitud excedió el tiempo máximo de espera (60s).'
             });
         }
     }, REQUEST_TIMEOUT_MS);

@@ -56,15 +56,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 </a>
             </div>
 
-            <div class="nav-item has-sub ${currentPage.includes('seguimiento') || currentPage.includes('verificacion') || currentPage.includes('detalle-paciente') ? 'active' : ''}">
-                <div class="nav-link">
+            <div class="nav-item ${currentPage.includes('seguimiento') || currentPage.includes('detalle-paciente') ? 'active' : ''}">
+                <a href="${bp}modulos/seguimiento/seguimiento-pacientes.html" class="nav-link">
                     <i class="fa-solid fa-bed-pulse"></i>
                     <span>Seguimiento de Pacientes</span>
-                </div>
-                <div class="sub-menu">
-                    <a href="${bp}modulos/seguimiento/seguimiento-pacientes.html" class="${currentPage.includes('seguimiento') || currentPage.includes('detalle-paciente') ? 'selected' : ''}">Búsqueda Pacientes</a>
-                    <a href="${bp}modulos/seguimiento/verificacion-paciente.html" class="${currentPage.includes('verificacion') ? 'selected' : ''}">Verificación - Actualización</a>
-                </div>
+                </a>
             </div>
 
             <div class="nav-item has-sub ${currentPage.includes('consulta-rapida') || currentPage.includes('consulta-masiva') || currentPage.includes('validacion-global') ? 'active' : ''}">

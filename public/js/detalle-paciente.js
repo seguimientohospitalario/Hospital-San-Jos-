@@ -63,15 +63,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('loading-panel').style.display = 'none';
         document.getElementById('content-panel').style.display = 'block';
 
-        // 1. BANNER
-        document.getElementById('dp-nombre').textContent = `${pacienteData.apellidos}, ${pacienteData.nombres}`;
-        document.getElementById('dp-docs').textContent = `DNI: ${pacienteData.dni} | HC: ${pacienteData.historia_clinica} | Seguro: ${pacienteData.tipo_seguro}`;
+        // 1. BANNER REPLICADO DE IMAGEN
+        document.getElementById('dp-nombre').textContent = `PACIENTE: ${pacienteData.apellidos}, ${pacienteData.nombres}`;
+        document.getElementById('dp-docs').textContent = `DNI: ${pacienteData.dni} | HC: ${pacienteData.historia_clinica} | Seguro: ${pacienteData.tipo_seguro} | Servicio: ${pacienteData.servicio || 'N/A'}`;
         
-        const condBadge = document.getElementById('dp-condicion');
+        const condBadge = document.getElementById('banner-condicion');
         condBadge.textContent = pacienteData.condicion;
-        if(pacienteData.condicion === 'Hospitalizado') condBadge.className = 'condicion-badge cond-hospitalizado';
-        else if(pacienteData.condicion === 'Alta') condBadge.className = 'condicion-badge cond-alta';
-        else condBadge.className = 'condicion-badge cond-fallecido';
+        const condVal = (pacienteData.condicion || '').toLowerCase();
+        const condCls = condVal === 'hospitalizado' ? 'cond-hospitalizado' : (condVal === 'fallecido' ? 'cond-fallecido' : 'cond-alta');
+        condBadge.className = 'condicion-badge ' + condCls;
 
         // 2. FICHA
         document.getElementById('ficha-dni').textContent = pacienteData.dni;
@@ -140,8 +140,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <p><i class="fa-solid fa-clock"></i> Duración: ${diasCiclo} días | Estado: <span class="condicion-badge ${evAlta && evAlta.tipo_evento === 'Fallecido' ? 'cond-fallecido' : (evAlta ? 'cond-alta' : 'cond-hospitalizado')}">${estadoTexto}</span></p>
                 </div>
                 <div>
-                    <a href="verificacion-paciente.html?dni=${pacienteData.dni}&ciclo=${id}&from=detalle" class="btn-module primary" style="text-decoration:none; display:inline-block; padding: 8px 15px;">
-                        <i class="fa-solid ${botonIcon}"></i> ${botonTexto}
+                    <a href="seguimiento-pacientes.html?dni=${pacienteData.dni}" class="btn-module primary" style="text-decoration:none; display:inline-block; padding: 8px 15px;">
+                        <i class="fa-solid ${botonIcon}"></i> ${botonIcon === 'fa-eye' ? 'Ver Timeline' : 'Actualizar'}
                     </a>
                 </div>
             `;
@@ -150,6 +150,22 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         if(ciclosCount === 0) {
             container.innerHTML = '<p style="color: #64748b; font-size:14px;">No existen expedientes clínicos generados.</p>';
+        }
+
+        // Actualizar banner dias (ciclo activo o ultimo)
+        const bannerDias = document.getElementById('banner-dias');
+        if (ciclosIds.length > 0) {
+            const lastId = ciclosIds[0];
+            const evs = ciclos[lastId];
+            const evIngreso = evs.find(x => x.tipo_evento === 'Hospitalizado');
+            const evAlta = evs.find(x => x.tipo_evento === 'Alta' || x.tipo_evento === 'Fallecido');
+            const nowPeru = new Date(new Date().toLocaleString("en-US", { timeZone: "America/Lima" }));
+            let inicio = evIngreso ? new Date(evIngreso.fecha_evento) : new Date(evs[0].fecha_evento);
+            let fin = evAlta ? new Date(evAlta.fecha_evento) : nowPeru;
+            let dias = Math.max(0, Math.ceil((fin - inicio) / (1000 * 60 * 60 * 24)));
+            bannerDias.textContent = `${dias} ${dias === 1 ? 'día' : 'días'}`;
+        } else {
+            bannerDias.style.display = 'none';
         }
 
         // KPIS
@@ -205,7 +221,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if(e2) throw e2;
 
             // redigirir a la linea de tiempo del nuevo ciclo
-            window.location.href = `verificacion-paciente.html?dni=${pacienteData.dni}&ciclo=${payload.ciclo_id}`;
+            window.location.href = `seguimiento-pacientes.html?dni=${pacienteData.dni}`;
             
         } catch(e) {
             console.error(e);
