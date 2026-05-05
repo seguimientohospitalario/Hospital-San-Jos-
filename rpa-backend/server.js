@@ -113,10 +113,69 @@ async function scrapePaciente(paciente, browser) {
         }
 
         // ========== 4. CHECKBOX DE CLÁUSULA ==========
-        // Angular Material MDC: el tag es "mat-checkbox" directamente
-        await page.waitForSelector('mat-checkbox', { timeout: 8000 });
-        await page.click('mat-checkbox');
-        console.log(`[RPA] Checkbox de cláusula clickeado`);
+        // Scrollear la página para que Angular renderice el checkbox
+        await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+        await delay(2000);
+
+        // DEBUG: listar todos los elementos que el robot puede ver
+        const debugInfo = await page.evaluate(() => {
+            const allTags = [...new Set(Array.from(document.querySelectorAll('*')).map(e => e.tagName.toLowerCase()))];
+            const checkboxes = document.querySelectorAll('input[type="checkbox"], mat-checkbox, .mat-checkbox, .mdc-checkbox');
+            const buttons = Array.from(document.querySelectorAll('button')).map(b => b.textContent.trim().substring(0, 30));
+            return {
+                hasMatCheckbox: allTags.includes('mat-checkbox'),
+                checkboxCount: checkboxes.length,
+                checkboxSelectors: Array.from(checkboxes).map(c => c.tagName + '.' + c.className.substring(0, 50)),
+                buttons,
+                pageTitle: document.title,
+                bodySnippet: document.body.innerText.substring(0, 300)
+            };
+        });
+        console.log(`[DEBUG] Página: ${debugInfo.pageTitle}`);
+        console.log(`[DEBUG] mat-checkbox existe: ${debugInfo.hasMatCheckbox}`);
+        console.log(`[DEBUG] Checkboxes encontrados: ${debugInfo.checkboxCount}`);
+        console.log(`[DEBUG] Selectores: ${JSON.stringify(debugInfo.checkboxSelectors)}`);
+        console.log(`[DEBUG] Botones: ${JSON.stringify(debugInfo.buttons)}`);
+        console.log(`[DEBUG] Texto visible: ${debugInfo.bodySnippet.substring(0, 200)}`);
+
+        // Intentar múltiples selectores para el checkbox
+        let checkboxClicked = false;
+        const checkboxSelectors = [
+            'mat-checkbox',
+            '.mat-mdc-checkbox',
+            '.mat-checkbox',
+            'input[type="checkbox"]',
+            '.mdc-checkbox',
+            '.mdc-checkbox__native-control'
+        ];
+
+        for (const sel of checkboxSelectors) {
+            try {
+                const el = await page.$(sel);
+                if (el) {
+                    await el.click();
+                    checkboxClicked = true;
+                    console.log(`[RPA] Checkbox clickeado con selector: ${sel}`);
+                    break;
+                }
+            } catch (e) { /* intentar siguiente */ }
+        }
+
+        // Fallback: buscar por texto
+        if (!checkboxClicked) {
+            console.log(`[RPA] Intentando click por texto...`);
+            await page.evaluate(() => {
+                const labels = Array.from(document.querySelectorAll('label, span, div, mat-checkbox'));
+                const el = labels.find(l => l.textContent.includes('Acepto'));
+                if (el) el.click();
+            });
+            checkboxClicked = true;
+            console.log(`[RPA] Checkbox clickeado por texto`);
+        }
+
+        if (!checkboxClicked) {
+            throw new Error('No se pudo encontrar el checkbox de cláusula');
+        }
         await delay(1500);
 
         // ========== 5. SCROLLEAR MODAL HASTA ABAJO ==========
