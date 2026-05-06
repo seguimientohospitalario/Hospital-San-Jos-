@@ -122,17 +122,7 @@
 }
 .stat-chip strong { color: #1e293b; }
 
-/* Toast */
-.toast-notification {
-    position: fixed; bottom: 24px; right: 24px;
-    background: #1e293b; color: #fff; padding: 14px 24px;
-    border-radius: 10px; font-size: 14px; font-weight: 500;
-    z-index: 10000; display: none; align-items: center; gap: 10px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-}
-.toast-notification.show { display: flex; }
-.toast-notification.error { background: #dc2626; }
-.toast-notification.success { background: #059669; }
+
 
 /* Password wrapper */
 .password-field-wrapper { position: relative; }

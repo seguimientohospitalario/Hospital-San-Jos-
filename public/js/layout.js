@@ -331,6 +331,122 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // OFFLINE HANDLING
+
+window.showGuideTooltip = (id, htmlContent, duration, showCheckbox, options = {}) => {
+    const userName = sessionStorage.getItem('userName') || 'default';
+    const hideKey = `hideGuideTooltips_${userName}`;
+    if (localStorage.getItem(hideKey) === 'true') return;
+    
+    const isOnce = options.oncePerSession === undefined ? true : options.oncePerSession;
+    if (isOnce && sessionStorage.getItem(`guide_${id}`) === 'true') return;
+    if (isOnce) sessionStorage.setItem(`guide_${id}`, 'true');
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'guide-tooltip';
+    tooltip.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap: 15px;">
+                <span style="font-weight:500; color:#1e293b; font-size:14px; max-width: 250px;">
+                    <i class="fa-solid fa-circle-info" style="color:#3b82f6; margin-right:6px;"></i>
+                    ${htmlContent}
+                </span>
+                <button class="close-guide" style="background:none; border:none; cursor:pointer; color:#94a3b8; padding:0; line-height:1;"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            ${showCheckbox ? `
+            <label style="font-size:12px; color:#64748b; display:flex; align-items:center; gap:6px; margin-top:5px; cursor:pointer;">
+                <input type="checkbox" id="never-show-guide"> No volver a mostrar
+            </label>` : ''}
+        </div>
+    `;
+    
+    tooltip.style.position = options.position || 'fixed';
+    tooltip.style.background = '#ffffff';
+    tooltip.style.padding = '15px 20px';
+    tooltip.style.borderRadius = '10px';
+    tooltip.style.boxShadow = '0 10px 25px rgba(0,0,0,0.1)';
+    tooltip.style.borderLeft = '4px solid #3b82f6';
+    tooltip.style.zIndex = '9999';
+
+    if (options.targetSelector) {
+        const target = document.querySelector(options.targetSelector);
+        if (target) {
+            target.style.position = 'relative';
+            tooltip.style.position = 'absolute';
+            tooltip.style.top = options.top || '-70px'; // By default, above the element
+            tooltip.style.right = options.right || '0';
+            target.appendChild(tooltip);
+        } else {
+            document.body.appendChild(tooltip);
+            tooltip.style.bottom = '30px';
+            tooltip.style.right = '30px';
+        }
+    } else {
+        tooltip.style.bottom = '30px';
+        tooltip.style.right = '30px';
+        document.body.appendChild(tooltip);
+    }
+
+    const handleClose = () => {
+        const cb = tooltip.querySelector('#never-show-guide');
+        if (cb && cb.checked) {
+            const userName = sessionStorage.getItem('userName') || 'default';
+            const hideKey = `hideGuideTooltips_${userName}`;
+            localStorage.setItem(hideKey, 'true');
+        }
+        tooltip.classList.add('guide-tooltip-exit');
+        setTimeout(() => tooltip.remove(), 400);
+    };
+
+    tooltip.querySelector('.close-guide').addEventListener('click', handleClose);
+
+    if (duration) {
+        setTimeout(() => {
+            if (tooltip.parentElement) {
+                handleClose();
+            }
+        }, duration);
+    }
+};
+
+window.showSystemTooltip = (message, isError = false) => {
+    const existing = document.querySelector('.system-toast-tooltip');
+    if (existing) existing.remove();
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'guide-tooltip system-toast-tooltip';
+    
+    const icon = isError ? '<i class="fa-solid fa-circle-xmark" style="color:#ef4444; margin-right:8px; font-size:16px;"></i>' 
+                         : '<i class="fa-solid fa-circle-check" style="color:#10b981; margin-right:8px; font-size:16px;"></i>';
+    
+    const borderColor = isError ? '#ef4444' : '#10b981';
+
+    tooltip.innerHTML = `
+        <div style="display:flex; align-items:center;">
+            ${icon}
+            <span style="font-weight:500; color:#1e293b; font-size:14px;">${message}</span>
+        </div>
+    `;
+    
+    tooltip.style.position = 'fixed';
+    tooltip.style.bottom = '30px';
+    tooltip.style.right = '30px';
+    tooltip.style.background = '#ffffff';
+    tooltip.style.padding = '12px 20px';
+    tooltip.style.borderRadius = '10px';
+    tooltip.style.boxShadow = '0 10px 25px rgba(0,0,0,0.1)';
+    tooltip.style.borderLeft = `4px solid ${borderColor}`;
+    tooltip.style.zIndex = '10005';
+
+    document.body.appendChild(tooltip);
+
+    setTimeout(() => {
+        if (tooltip.parentElement) {
+            tooltip.classList.add('guide-tooltip-exit');
+            setTimeout(() => tooltip.remove(), 400);
+        }
+    }, 3000);
+};
+
 const handleOffline = () => {
     let offlineDiv = document.getElementById('global-offline-banner');
     if (!offlineDiv) {

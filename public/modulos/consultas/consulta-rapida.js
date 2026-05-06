@@ -50,20 +50,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const showToast = (message, isError = false) => {
-        const toast = document.getElementById('toast');
-        const toastText = document.getElementById('toast-text');
-        const toastIcon = document.getElementById('toast-icon');
-
-        toast.className = isError ? 'toast-error' : 'toast-success';
-        toastIcon.className = isError ? 'fa-solid fa-circle-xmark' : 'fa-solid fa-check-circle';
-        toastText.textContent = message;
-
-        toast.style.display = 'flex';
-        setTimeout(() => toast.classList.add('show'), 10);
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.style.display = 'none', 400);
-        }, 3000);
+        if(window.showSystemTooltip) {
+            window.showSystemTooltip(message, isError);
+        }
     };
 
     const updateActionsBar = () => {
@@ -95,12 +84,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (!banner) {
                     const clone = templateAlerta.content.cloneNode(true);
                     banner = clone.querySelector('#alerta-banner');
-                    banner.style.position = 'absolute';
+                    banner.style.position = 'fixed';
                     banner.style.left = '50%';
-                    banner.style.top = '50%';
+                    banner.style.top = '35px';
                     banner.style.transform = 'translate(-50%, -50%)';
-                    banner.style.zIndex = '1000';
-                    header.appendChild(banner);
+                    banner.style.zIndex = '10001';
+                    document.body.appendChild(banner);
                 }
             } else {
                 if (banner) {
@@ -127,13 +116,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         const banner = clone.querySelector('#progreso-banner');
         const countSpan = banner.querySelector('#countdown-val');
         
-        banner.style.position = 'absolute';
+        banner.style.position = 'fixed';
         banner.style.left = '50%';
-        banner.style.top = '50%';
+        banner.style.top = '35px';
         banner.style.transform = 'translate(-50%, -50%)';
         banner.style.zIndex = '10001'; // Superior al overlay
         
-        header.appendChild(banner);
+        document.body.appendChild(banner);
 
         let rem = segundos;
         countSpan.textContent = rem;
@@ -611,4 +600,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     restoreState();
+
+    // ========== AUTO RPA ==========
+    const params = new URLSearchParams(window.location.search);
+    const autoRpaDni = params.get('autoRpaDni');
+    if (autoRpaDni) {
+        inputDNI.value = autoRpaDni;
+        // Limpiar la URL para evitar que se vuelva a ejecutar al recargar la página
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        await loadPacientes(); // Esperar a que busque en la base de datos
+        
+        // Buscar el checkbox del DNI en la tabla recién renderizada
+        const checkbox = tbodyPacientes.querySelector(`.patient-checkbox[data-dni="${autoRpaDni}"]`);
+        if (checkbox) {
+            // Simular el clic en el checkbox para activar el botón
+            checkbox.checked = true;
+            checkbox.dispatchEvent(new Event('change'));
+            
+            // Simular clic en el botón Validar con un pequeñísimo delay para que la UI se actualice
+            setTimeout(() => {
+                btnValidar.click();
+            }, 200);
+        }
+    }
 });

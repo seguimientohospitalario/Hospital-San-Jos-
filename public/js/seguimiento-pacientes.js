@@ -62,15 +62,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const showToast = (text, isError = false) => {
-        const toastText = document.getElementById('toast-text');
-        toastText.textContent = text;
-        toast.className = isError ? 'toast-error' : 'toast-success';
-        toast.style.display = 'flex';
-        setTimeout(() => toast.classList.add('show'), 10);
-        setTimeout(() => {
-            toast.classList.remove('show');
-            setTimeout(() => toast.style.display = 'none', 400);
-        }, 3000);
+        if(window.showSystemTooltip) {
+            window.showSystemTooltip(text, isError);
+        }
     };
 
     const searchPacientes = async () => {
@@ -387,4 +381,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     searchPacientes();
+
+    // Mostrar tooltip guía al entrar al módulo
+    if (window.showGuideTooltip) {
+        setTimeout(() => {
+            window.showGuideTooltip('seguimiento_main', 'Presiona la fila del paciente para acceder a su expediente.', 5000, false, { oncePerSession: false });
+        }, 800);
+    }
 });

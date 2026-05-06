@@ -74,6 +74,32 @@ body.layout-loaded {
     opacity: 1;
 }
 
+@keyframes fadeOutLayout {
+    to { opacity: 0; }
+}
+
+body.fade-out {
+    animation: fadeOutLayout 0.3s forwards;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(120%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideOutRight {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(120%); opacity: 0; }
+}
+
+.guide-tooltip {
+    animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.guide-tooltip-exit {
+    animation: slideOutRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
 /* LAYOUT DE PANTALLA COMPLETA */
 .login-page {
     min-height: 100vh;
@@ -208,15 +234,35 @@ body.layout-loaded {
     padding: 0;
 }
 
-/* RECORDAR */
+/* RECORDAR + OLVIDÉ CONTRASEÑA */
+.remember-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
 .remember {
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 14px;
-    margin-bottom: 20px;
     color: #555555;
-    /* Texto oscuro */
+}
+
+.forgot-link {
+    font-size: 13px;
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.forgot-link:hover {
+    color: #2563eb;
+    text-decoration: underline;
 }
 
 /* BOTÃ“N */
@@ -323,6 +369,7 @@ body {
     display: flex;
     flex-direction: column;
     padding-top: 0; /* Subido para alinear con header */
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .sidebar-header {

@@ -26,6 +26,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const modalError = document.getElementById('modal-error');
     const form = document.getElementById('form-admin');
     const inputNombre = document.getElementById('input-nombre');
+    const inputUsername = document.getElementById('input-username');
     const inputEmail = document.getElementById('input-email');
     const inputPassword = document.getElementById('input-password');
     const groupEmail = document.getElementById('group-email');
@@ -42,13 +43,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     let editingUserId = null;
 
     const showToast = (msg, type = 'success') => {
-        const toast = document.getElementById('toast-notification');
-        const icon = document.getElementById('toast-icon');
-        const text = document.getElementById('toast-text');
-        toast.className = 'toast-notification show ' + type;
-        icon.className = type === 'success' ? 'fa-solid fa-circle-check' : 'fa-solid fa-circle-xmark';
-        text.textContent = msg;
-        setTimeout(() => toast.classList.remove('show'), 3500);
+        if(window.showSystemTooltip) {
+            window.showSystemTooltip(msg, type === 'error');
+        }
     };
 
     togglePass.addEventListener('click', () => {
@@ -63,24 +60,23 @@ document.addEventListener('DOMContentLoaded', async () => {
         editingUserId = null;
 
         if (mode === 'create') {
-            updateModalLabels(inputRol.value);
+            inputRol.value = "2";
+            updateModalLabels("2");
             groupEmail.style.display = 'block';
             groupPassword.style.display = 'block';
             inputEmail.required = true;
             inputPassword.required = true;
-            inputRol.disabled = false;
-            inputRol.value = "2";
+            inputUsername.value = '';
         } else {
-            modalTitle.innerHTML = '<i class="fa-solid fa-user-pen"></i> Editar Registro';
-            btnSubmitText.textContent = 'Guardar Cambios';
+            inputRol.value = user.id_rol;
+            updateModalLabels(user.id_rol);
             groupEmail.style.display = 'none';
             groupPassword.style.display = 'none';
             inputEmail.required = false;
             inputPassword.required = false;
-            inputRol.disabled = true;
-            inputRol.value = user.id_rol;
             editingUserId = user.id_usuario;
             inputNombre.value = user.nombre_completo || '';
+            inputUsername.value = user.nombre_usuario || '';
         }
         modalOverlay.classList.add('show');
     };
@@ -112,8 +108,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         try {
             const { data, error } = await supabaseClient
                 .from('perfiles')
-                .select('id_usuario, nombre_completo, email, id_rol, fecha_creacion, activo, roles(nombre)')
-                .eq('id_rol', 2) // Solo Administradores
+                .select('id_usuario, nombre_completo, nombre_usuario, email, id_rol, fecha_creacion, activo, roles(nombre)')
+                .eq('id_rol', 2)
                 .order('fecha_creacion', { ascending: false });
 
             if (error) throw error;
@@ -161,7 +157,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
 
-            // No allow editing or toggling Desarrollador accounts
             let actionsHTML = '';
             if (!isDev) {
                 const toggleBtn = user.activo
@@ -238,25 +233,39 @@ document.addEventListener('DOMContentLoaded', async () => {
         e.preventDefault();
         modalError.classList.remove('show');
         const nombre = inputNombre.value.trim();
+        const username = inputUsername.value.trim();
         if (!nombre) { showModalError('El nombre es obligatorio.'); return; }
+        if (!username) { showModalError('El nombre de usuario es obligatorio.'); return; }
 
         btnSubmit.disabled = true;
         btnSubmitSpinner.style.display = 'inline-block';
         btnSubmitText.style.visibility = 'hidden';
 
         try {
+            const { data: existingUser } = await supabaseClient
+                .from('perfiles')
+                .select('id_usuario')
+                .eq('nombre_usuario', username)
+                .maybeSingle();
+
+            if (existingUser && (!editingUserId || existingUser.id_usuario !== editingUserId)) {
+                showModalError('Este nombre de usuario ya está en uso. Elige otro.');
+                resetSubmitBtn();
+                return;
+            }
+
             if (editingUserId) {
                 const { error } = await supabaseClient
                     .from('perfiles')
-                    .update({ nombre_completo: nombre })
+                    .update({ nombre_completo: nombre, id_rol: parseInt(inputRol.value), nombre_usuario: username })
                     .eq('id_usuario', editingUserId);
                 if (error) throw error;
                 showToast('Administrador actualizado correctamente');
             } else {
                 const email = inputEmail.value.trim();
                 const password = inputPassword.value;
-                if (!email || !password) { showModalError('Email y contraseña son obligatorios.'); resetBtn(); return; }
-                if (password.length < 6) { showModalError('La contraseña debe tener al menos 6 caracteres.'); resetBtn(); return; }
+                if (!email || !password) { showModalError('Email y contraseña son obligatorios.'); resetSubmitBtn(); return; }
+                if (password.length < 6) { showModalError('La contraseña debe tener al menos 6 caracteres.'); resetSubmitBtn(); return; }
 
                 const { data: { session: s } } = await supabaseClient.auth.getSession();
                 const response = await fetch(`${supabaseUrl}/functions/v1/create-user`, {
@@ -276,12 +285,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const result = await response.json();
                 if (!response.ok) {
                     const errMsg = result.error || 'Error al crear administrador';
-                    showModalError(errMsg.includes('already been registered') ? 'Este correo ya está registrado.' : errMsg);
-                    resetBtn();
+                    if (errMsg.includes('already been registered')) {
+                        showModalError('Este correo electrónico ya está registrado.');
+                    } else {
+                        showModalError(errMsg);
+                    }
+                    resetSubmitBtn();
                     return;
                 }
-                const labelSuccess = inputRol.value == "2" ? 'Administrador' : 'Usuario';
-                showToast(`${labelSuccess} creado exitosamente`);
+
+                const { data: newUser } = await supabaseClient
+                    .from('perfiles')
+                    .select('id_usuario')
+                    .eq('email', email)
+                    .single();
+
+                if (newUser) {
+                    await supabaseClient
+                        .from('perfiles')
+                        .update({ nombre_usuario: username })
+                        .eq('id_usuario', newUser.id_usuario);
+                }
+                showToast('Administrador creado exitosamente');
             }
             closeModal();
             await fetchAdmins();

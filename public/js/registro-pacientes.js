@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Inicialización y Auth
     const client = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
     const { data: { session } } = await client.auth.getSession();
-    
+
     if (!session) {
         window.location.href = '../../index.html';
         return;
@@ -14,13 +14,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const viewForm = document.getElementById('view-form');
     const btnNew = document.getElementById('local-new-patient-btn');
     const moduleCommands = document.querySelector('.module-commands');
-    
+
     const form = document.getElementById('registro-form');
     const btnCancelar = document.getElementById('btn-cancelar');
     const btnGuardar = document.getElementById('btn-guardar');
     const textGuardar = document.getElementById('guardar-text');
     const spinnerGuardar = document.getElementById('guardar-spinner');
-    
+
     const toast = document.getElementById('toast');
     const selectSeguro = document.getElementById('paciente-seguro');
     const grupoOtros = document.getElementById('grupo-otros');
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnExecSearch = document.getElementById('execute-search');
     const loadingIndicator = document.getElementById('loading-indicator');
     const tableElement = document.getElementById('table-element');
-    
+
     // Referencias para el filtro de Servicio
     const filterServicio = document.getElementById('filter-servicio');
     const btnClearFilterServicio = document.getElementById('clear-filter-servicio');
@@ -66,9 +66,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         parseDate: (dateStr, format) => {
             const parts = dateStr.split('/');
             if (parts.length === 3) {
-                const day   = parseInt(parts[0], 10);
+                const day = parseInt(parts[0], 10);
                 const month = parseInt(parts[1], 10) - 1; // meses 0-indexed
-                const year  = parseInt(parts[2], 10);
+                const year = parseInt(parts[2], 10);
                 if (!isNaN(day) && !isNaN(month) && !isNaN(year)) {
                     return new Date(year, month, day);
                 }
@@ -103,7 +103,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Variables de Paginación Inteligente y DB
     let currentPage = 1;
-    let rowsPerPage = 5; 
+    let rowsPerPage = 5;
     let totalRecords = 0;
     let searchQuery = '';
     let filterQuery = ''; // Variable para almacenar el filtro de Servicio
@@ -114,7 +114,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const loadServicios = async () => {
         try {
             const predefinedServicios = [
-                "Shock trauma", "Salud mental", "UVI", "Medicina", 
+                "Shock trauma", "Salud mental", "UVI", "Medicina",
                 "Cirugía", "Pediatría", "Neonatología", "Ginecología", "Puerperio"
             ];
 
@@ -146,7 +146,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ============================================
     // CARGA DE DATOS LOCALES VS SERVIDOR (PAGINACIÓN)
     // ============================================
-        const loadPacientes = async () => {
+    const loadPacientes = async () => {
         try {
             loadingIndicator.style.display = 'block';
             tableElement.style.display = 'none';
@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         items.forEach((item, idx) => {
             const row = document.createElement('tr');
             const condClass = getCondicionClass(item.condicion);
-            
+
             // Peru Time for display
             let fechaNacDisplay = item.fecha_nacimiento;
             if (item.fecha_nacimiento && item.fecha_nacimiento.includes('-')) {
@@ -224,12 +224,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
             row.innerHTML = `
-                <td style="font-weight: 700; color: #1e293b;">${item.dni}</td>
-                <td style="color: #475569;">${item.apellidos}, ${item.nombres}</td>
-                <td style="color: #475569;">${item.historia_clinica}</td>
-                <td><span class="seguro-badge-text">${item.tipo_seguro}</span></td>
+                <td>${item.dni}</td>
+                <td>${item.apellidos}, ${item.nombres}</td>
+                <td>${item.historia_clinica}</td>
+                <td><span class="seguro-badge">${item.tipo_seguro}</span></td>
                 <td>${item.servicio || '-'}</td>
-                <td style="text-align: left;"><span class="condicion-badge ${condClass}">${(item.condicion || '').trim()}</span></td>
+                <td><span class="condicion-badge ${condClass}">${(item.condicion || '').trim()}</span></td>
                 <td style="text-align: center;">
                     <div style="display: flex; justify-content: center; gap: 8px; align-items: center; min-height: 32px;">
                         <button class="action-btn-edit local-edit-btn" data-id="${item.id}" title="Editar Paciente">
@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             btn.addEventListener('click', (e) => {
                 const rowId = e.currentTarget.getAttribute('data-id');
                 const p = items.find(x => x.id == rowId);
-                if(p) openEditForm(p);
+                if (p) openEditForm(p);
             });
         });
 
@@ -267,14 +267,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     const openEditForm = (p) => {
         form.reset();
         document.getElementById('paciente-id').value = p.id;
-        
+        document.getElementById('btn-obtener-fnac').style.display = 'none';
+
         // Bloquear todos los campos temporalmente
         document.querySelectorAll('.standard-input').forEach(el => el.disabled = true);
 
         // Volcar data
         document.getElementById('paciente-dni').value = p.dni;
         document.getElementById('paciente-hc').value = p.historia_clinica;
-        
+
         // Formatear fecha para Flatpickr
         if (fpInstance && p.fecha_nacimiento) {
             const dateParts = p.fecha_nacimiento.split('-');
@@ -287,12 +288,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('paciente-apellidos').value = p.apellidos || '';
         document.getElementById('paciente-nombres').value = p.nombres || '';
         document.getElementById('paciente-codigo-ver').value = p.codigo_verificacion || '';
-        
+
         setSelectValueCaseInsensitive(selectSeguro, p.tipo_seguro);
         if (selectSeguro) {
             selectSeguro.dispatchEvent(new Event('change'));
         }
-        
+
         setSelectValueCaseInsensitive(document.getElementById('paciente-servicio'), p.servicio);
         setSelectValueCaseInsensitive(document.getElementById('paciente-condicion'), p.condicion);
 
@@ -319,7 +320,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('paciente-apellidos').disabled = true;
             document.getElementById('paciente-nombres').disabled = true;
             document.getElementById('paciente-codigo-ver').disabled = true;
-            
+
             selectSeguro.disabled = true;
             document.getElementById('paciente-servicio').disabled = true;
             document.getElementById('paciente-condicion').disabled = true;
@@ -327,7 +328,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         viewLista.style.display = 'none';
-        moduleCommands.style.display = 'none'; 
+        moduleCommands.style.display = 'none';
         viewForm.style.display = 'block';
     };
 
@@ -343,9 +344,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 containerId: 'pagination-container',
                 currentPage,
                 totalPages,
-                onPageChange: (page) => { 
-                    currentPage = page; 
-                    loadPacientes(); 
+                onPageChange: (page) => {
+                    currentPage = page;
+                    loadPacientes();
                 }
             });
         } else {
@@ -376,7 +377,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const newRows = DynamicTable.calcRowsPerPage({
                 excludeSelectors: ['.top-header', '.module-commands', '.pagination-controls']
             });
-            
+
             if (newRows !== oldRows) {
                 currentPage = 1;
                 loadPacientes();
@@ -388,7 +389,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const availableHeight = window.innerHeight - 350;
             let calculatedRows = Math.floor(availableHeight / 60);
             calculatedRows = calculatedRows > 2 ? calculatedRows : 3;
-            
+
             if (calculatedRows !== oldRows) {
                 currentPage = 1;
                 loadPacientes();
@@ -445,7 +446,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         filterServicio.value = '';
         filterServicio.style.color = "#94a3b8"; // Reset color
         sessionStorage.removeItem('rp_filter_servicio');
-        
+
         // Limpiar Buscador DNI
         searchQuery = '';
         btnSearchDni.value = '';
@@ -476,7 +477,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ============================================
     // OBTENER FECHA DE NACIMIENTO (Cloudflare Worker)
     // ============================================
-    const WORKER_URL = 'https://dni-lookup-api.josue-rpa.workers.dev';
+    const WORKER_URL = 'https://dni-lookup-api.seguimientohospitalario5.workers.dev/';
     const btnObtenerFnac = document.getElementById('btn-obtener-fnac');
     const btnFnacText = document.getElementById('btn-fnac-text');
     const fnacSpinner = document.getElementById('fnac-spinner');
@@ -485,14 +486,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const dniValue = inputDni.value.trim();
 
         if (!dniValue || dniValue.length !== 8) {
-            document.getElementById('toast-text').textContent = 'Ingrese un DNI válido de 8 dígitos primero';
-            toast.style.display = 'flex';
-            toast.style.background = '#ef4444';
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.style.display = 'none', 400);
-            }, 3000);
+            if(window.showSystemTooltip) window.showSystemTooltip('Ingrese un DNI válido de 8 dígitos primero', true);
             return;
         }
 
@@ -521,34 +515,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
 
                 // Toast de éxito
-                document.getElementById('toast-text').textContent = `Fecha obtenida: ${result.fecha_nac}`;
-                toast.style.display = 'flex';
-                toast.style.background = '#10b981';
-                setTimeout(() => toast.classList.add('show'), 10);
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                    setTimeout(() => toast.style.display = 'none', 400);
-                }, 3000);
+                if(window.showSystemTooltip) window.showSystemTooltip(`Fecha obtenida: ${result.fecha_nac}`);
             } else {
-                document.getElementById('toast-text').textContent = result.error || 'No se encontró fecha para este DNI';
-                toast.style.display = 'flex';
-                toast.style.background = '#ef4444';
-                setTimeout(() => toast.classList.add('show'), 10);
-                setTimeout(() => {
-                    toast.classList.remove('show');
-                    setTimeout(() => toast.style.display = 'none', 400);
-                }, 3500);
+                if(window.showSystemTooltip) window.showSystemTooltip(result.error || 'No se encontró fecha para este DNI', true);
             }
         } catch (err) {
             console.error('Error Worker:', err);
-            document.getElementById('toast-text').textContent = 'Error de conexión con el servicio';
-            toast.style.display = 'flex';
-            toast.style.background = '#ef4444';
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.style.display = 'none', 400);
-            }, 3500);
+            if(window.showSystemTooltip) window.showSystemTooltip('Error de conexión con el servicio', true);
         } finally {
             btnObtenerFnac.disabled = false;
             btnFnacText.textContent = 'Obtener Fecha de Nacimiento';
@@ -561,14 +534,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         moduleCommands.style.display = 'none'; // Ocultar módulos operativos locales
         form.reset();
         document.getElementById('paciente-id').value = '';
-        
+        document.getElementById('btn-obtener-fnac').style.display = 'flex';
+
         // Limpiar flatpickr
         const fp = document.getElementById('paciente-fecha-nac')._flatpickr;
         if (fp) fp.clear();
-        
+
         // Reset disabled states uniformly
         document.querySelectorAll('.standard-input').forEach(el => el.disabled = false);
-        
+
         // Forzar Condición "Hospitalizado" al registrar nuevo y bloquear
         const condicionSelect = document.getElementById('paciente-condicion');
         condicionSelect.value = 'Hospitalizado';
@@ -602,21 +576,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ============================================
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        
+
         // Validación de DNI antes de enviar
         const dniValue = document.getElementById('paciente-dni').value.trim();
         if (dniValue && dniValue.length !== 8) {
-            document.getElementById('toast-text').textContent = 'El DNI debe contener exactamente 8 dígitos numéricos';
-            toast.style.display = 'flex';
-            toast.style.background = '#ef4444'; // Rojo error
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.style.display = 'none', 400);
-            }, 3500);
+            if(window.showSystemTooltip) window.showSystemTooltip('El DNI debe contener exactamente 8 dígitos numéricos', true);
             return;
         }
-        
+
         // Estado visual: Bloquear botón y mostrar spinner
         btnGuardar.disabled = true;
         textGuardar.textContent = 'Guardando...';
@@ -636,7 +603,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!objectId) {
             payload.dni = document.getElementById('paciente-dni').value.trim();
             payload.historia_clinica = document.getElementById('paciente-hc').value.trim();
-            
+
             // Obtener fecha en formato ISO (Y-m-d) para Supabase desde Flatpickr
             const fp = document.getElementById('paciente-fecha-nac')._flatpickr;
             if (fp && fp.selectedDates.length > 0) {
@@ -655,11 +622,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (objectId) {
                 const { error } = await client.from('pacientes').update(payload).eq('id', objectId);
                 errorResp = error;
-                document.getElementById('toast-text').textContent = 'Paciente Actualizado Exitosamente';
             } else {
                 const { data: newPatient, error } = await client.from('pacientes').insert([payload]).select().single();
                 errorResp = error;
-                
+
                 if (!error && newPatient && payload.condicion === 'Hospitalizado') {
                     // Crear evento automático de Hospitalizado
                     await client.from('historial_eventos').insert([{
@@ -669,10 +635,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         registrado_por: userId
                     }]);
                 }
-                
-                document.getElementById('toast-text').textContent = 'Paciente Guardado Exitosamente';
             }
-            
+
             if (errorResp) {
                 if (errorResp.code === '23505') throw new Error("El DNI ingresado ya existe en el sistema.");
                 throw errorResp;
@@ -686,25 +650,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             viewLista.style.display = 'block';
             moduleCommands.style.display = 'flex';
 
-            document.getElementById('toast-text').textContent = 'Paciente Guardado Exitosamente';
-            toast.style.display = 'flex';
-            toast.style.background = '#10b981'; // Verde
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.style.display = 'none', 400); // Wait for transition
-            }, 3000);
+            const msgSuccess = objectId ? 'Paciente Actualizado Exitosamente' : 'Paciente Guardado Exitosamente';
+            if(window.showSystemTooltip) window.showSystemTooltip(msgSuccess);
 
         } catch (err) {
             console.error(err);
-            document.getElementById('toast-text').textContent = err.message || 'Error al guardar paciente';
-            toast.style.display = 'flex';
-            toast.style.background = '#ef4444'; // Rojo error
-            setTimeout(() => toast.classList.add('show'), 10);
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.style.display = 'none', 400);
-            }, 3500);
+            if(window.showSystemTooltip) window.showSystemTooltip(err.message || 'Error al guardar paciente', true);
         } finally {
             // Restaurar botón
             btnGuardar.disabled = false;

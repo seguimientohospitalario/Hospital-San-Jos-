@@ -30,8 +30,18 @@
                 <h2>Iniciar Sesión</h2>
 
                 <div class="form-group">
-                    <label for="email">Usuario (Email)</label>
-                    <input type="email" id="email" name="email" required placeholder="tu@email.com">
+                    <label for="role">Rol</label>
+                    <select id="role" name="role" required style="width: 100%; padding: 12px 14px; font-size: 15px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 4px; outline: none; transition: all 0.3s; color: #1e293b;">
+                        <option value="" disabled selected>Seleccione su rol</option>
+                        <option value="Desarrollador">Desarrollador</option>
+                        <option value="Administrador">Administrador</option>
+                        <option value="Usuario General">Usuario General</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="username">Nombre de Usuario</label>
+                    <input type="text" id="username" name="username" required placeholder="tu_usuario">
                 </div>
 
                 <div class="form-group">
@@ -44,9 +54,12 @@
                     </div>
                 </div>
 
-                <div class="remember">
-                    <input type="checkbox" id="remember">
-                    <label for="remember">Recordar correo</label>
+                <div class="remember-row">
+                    <div class="remember">
+                        <input type="checkbox" id="remember">
+                        <label for="remember">Recordar credenciales</label>
+                    </div>
+                    <a href="recuperar-password.html" class="forgot-link">¿Olvidaste tu contraseña?</a>
                 </div>
 
                 <button type="submit" id="login-btn" class="login-btn">

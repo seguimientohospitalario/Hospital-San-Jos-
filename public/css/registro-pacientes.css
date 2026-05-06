@@ -83,42 +83,33 @@
 }
 
 .condicion-badge {
-    padding: 4px 10px;
-    border-radius: 6px;
+    padding: 6px 12px;
+    border-radius: 4px;
     font-size: 12px;
     font-weight: 700;
     display: inline-block;
-    box-shadow: none !important;
-    border: none !important;
+    text-transform: uppercase;
+    text-align: center;
 }
 
-.cond-hospitalizado { background: rgba(245, 158, 11, 0.15); color: #d97706; }
-.cond-alta { background: rgba(16, 185, 129, 0.15); color: #059669; }
-.cond-fallecido { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
-.cond-cambio { background: rgba(139, 92, 246, 0.15); color: #7c3aed; }
-
-/* TOAST SUPERIOR */
-#toast {
-    position: fixed;
-    bottom: 30px;
-    top: auto;
-    right: -300px;
-    background: #10b981;
-    color: white;
-    padding: 15px 25px;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-    z-index: 9999;
-    transition: right 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-    font-weight: 500;
+.cond-hospitalizado { 
+    background: #e0f2fe; 
+    color: #0284c7; 
+}
+.cond-alta { 
+    background: #dcfce7; 
+    color: #15803d; 
+}
+.cond-fallecido { 
+    background: #fee2e2; 
+    color: #dc2626; 
+}
+.cond-cambio { 
+    background: #f1f5f9; 
+    color: #475569; 
 }
 
-#toast.show {
-    right: 20px;
-}
+
 
 
 /* MODERN SELECTS & DATE PICKERS */
@@ -313,38 +304,4 @@ select.standard-input:disabled {
     }
 }
 
-/* BADGES (Estandarizados) */
-.seguro-badge {
-    background: #f1f5f9;
-    color: #475569;
-    padding: 4px 10px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-
-.condicion-badge {
-    display: inline-block;
-    padding: 4px 12px;
-    border-radius: 50px;
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    text-align: center;
-}
-
-.cond-hospitalizado {
-    background: #e0f2fe;
-    color: #0369a1;
-}
-
-.cond-alta {
-    background: #dcfce7;
-    color: #15803d;
-}
-
-.cond-fallecido {
-    background: #fee2e2;
-    color: #b91c1c;
-}
+/* Los badges ya están definidos arriba para evitar duplicidad */

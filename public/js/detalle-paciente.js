@@ -180,6 +180,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else {
             btnNuevo.style.display = 'none';
         }
+
+        // Mostrar tooltip guía al entrar al expediente
+        if (window.showGuideTooltip) {
+            setTimeout(() => {
+                window.showGuideTooltip('detalle_main', 'Desplázate hacia abajo para ver el historial y los registros médicos del paciente.', null, true, {
+                    targetSelector: '#header-registros-hosp',
+                    top: '-65px',
+                    right: '0px',
+                    oncePerSession: false
+                });
+            }, 500);
+        }
     };
 
     // FLUJO NUEVO INGRESO
