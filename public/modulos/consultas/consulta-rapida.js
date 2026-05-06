@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
 
     const saveState = () => {
-        try { sessionStorage.setItem('cr_accumulated', JSON.stringify(accumulatedResults)); } catch {}
+        try { sessionStorage.setItem('cr_accumulated', JSON.stringify(accumulatedResults)); } catch { }
     };
 
     const restoreState = async () => {
@@ -42,15 +42,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (savedApellidos) inputApellidos.value = savedApellidos;
 
             const saved = sessionStorage.getItem('cr_accumulated');
-            if (saved) { 
-                accumulatedResults = JSON.parse(saved); 
+            if (saved) {
+                accumulatedResults = JSON.parse(saved);
                 renderTable();
             }
-        } catch {}
+        } catch { }
     };
 
     const showToast = (message, isError = false) => {
-        if(window.showSystemTooltip) {
+        if (window.showSystemTooltip) {
             window.showSystemTooltip(message, isError);
         }
     };
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const updateActionsBar = () => {
         const selectedCount = document.getElementById('selected-count');
         const btnValidar = document.getElementById('btn-validar');
-        
+
         selectedCount.textContent = selectedDNIs.length;
         btnValidar.disabled = selectedDNIs.length === 0;
     };
@@ -115,18 +115,18 @@ document.addEventListener('DOMContentLoaded', async () => {
         const clone = templateProgreso.content.cloneNode(true);
         const banner = clone.querySelector('#progreso-banner');
         const countSpan = banner.querySelector('#countdown-val');
-        
+
         banner.style.position = 'fixed';
         banner.style.left = '50%';
         banner.style.top = '35px';
         banner.style.transform = 'translate(-50%, -50%)';
         banner.style.zIndex = '10001'; // Superior al overlay
-        
+
         document.body.appendChild(banner);
 
         let rem = segundos;
         countSpan.textContent = rem;
-        
+
         countdownInterval = setInterval(() => {
             rem--;
             if (rem < 0) rem = 0;
@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Badge Seguro Extraído
             let seguroExtraidoHTML;
             if (seguroExtraido) {
-                seguroExtraidoHTML = `<span class="seguro-badge">${seguroExtraido}</span>`;
+                seguroExtraidoHTML = `<span class="seguro-badge" style="color: #0f172a;">${seguroExtraido}</span>`;
             } else {
                 seguroExtraidoHTML = `<span class="condicion-badge" style="background:#f1f5f9; color:#94a3b8; border-left:3px solid #cbd5e1;">N/A</span>`;
             }
@@ -348,7 +348,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
                 crCurrentPage = 1;
             }
-            
+
             renderTable();
             saveState();
         } catch (err) {
@@ -385,10 +385,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnValidar = document.getElementById('btn-validar');
     btnValidar.addEventListener('click', async () => {
         if (selectedDNIs.length === 0) return;
-        
+
         btnValidar.disabled = true;
         blockingOverlay.style.display = 'flex';
-        
+
         // Mostrar banner azul con estimado (aprox 12s por lote de 1-2)
         showProgresoBanner(15);
 
@@ -411,7 +411,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!response.ok) throw new Error('Error en la respuesta del servidor RPA');
 
             const result = await response.json();
-            
+
             if (result.success) {
                 const ahora = new Date().toISOString();
 
@@ -494,11 +494,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         document.getElementById('modal-paciente-nombre').textContent = `${paciente.apellidos}, ${paciente.nombres}`;
         document.getElementById('modal-paciente-info').textContent = `DNI: ${paciente.dni} | HC: ${paciente.historia_clinica || 'N/A'}`;
-        
+
         const seguroActual = paciente.tipo_seguro || '';
         document.getElementById('modal-seguro-actual').value = seguroActual;
         document.getElementById('modal-seguro-extraido').value = getSeguroExtraido(paciente) || '';
-        
+
         // Inhabilitar la opción del seguro actual en el select
         const opciones = modalNuevoSeguro.querySelectorAll('option');
         opciones.forEach(opt => {
@@ -608,16 +608,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         inputDNI.value = autoRpaDni;
         // Limpiar la URL para evitar que se vuelva a ejecutar al recargar la página
         window.history.replaceState({}, document.title, window.location.pathname);
-        
+
         await loadPacientes(); // Esperar a que busque en la base de datos
-        
+
         // Buscar el checkbox del DNI en la tabla recién renderizada
         const checkbox = tbodyPacientes.querySelector(`.patient-checkbox[data-dni="${autoRpaDni}"]`);
         if (checkbox) {
             // Simular el clic en el checkbox para activar el botón
             checkbox.checked = true;
             checkbox.dispatchEvent(new Event('change'));
-            
+
             // Simular clic en el botón Validar con un pequeñísimo delay para que la UI se actualice
             setTimeout(() => {
                 btnValidar.click();
