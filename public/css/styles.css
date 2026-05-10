@@ -24,10 +24,14 @@ html, body {
     inset: 0;
     background: rgba(15, 23, 42, 0.45);
     z-index: 55;
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.3s ease, visibility 0.3s;
 }
 
 #sidebar-overlay[hidden] {
-    display: none;
+    opacity: 0;
+    visibility: hidden;
 }
 
 /* Botón de menú en header (se activa en touch breakpoints) */
@@ -349,7 +353,7 @@ body {
     display: flex;
     flex-direction: column;
     min-height: 100vh;
-    padding-left: 280px;
+    padding-left: 350px;
     /* Espacio para el sidebar */
     transition: all 0.3s;
     position: relative;
@@ -357,7 +361,7 @@ body {
 
 /* SIDEBAR */
 .sidebar {
-    width: 280px;
+    width: 350px;
     height: 100vh;
     position: fixed;
     top: 0;
@@ -468,7 +472,7 @@ body {
     max-height: 0;
     overflow: hidden;
     padding-left: 54px;
-    transition: max-height 0.3s ease, margin 0.3s ease;
+    transition: max-height 0.3s ease, margin 0.3s ease, opacity 0.3s ease;
     opacity: 0;
 }
 
@@ -499,7 +503,7 @@ body {
     position: absolute;
     top: 25px;
     right: 40px;
-    left: 320px; /* Para que inicie tras el sidebar y el espacio padding */
+    left: 350px; /* Para que inicie tras el sidebar y el espacio padding */
     background: transparent;
     display: flex;
     justify-content: space-between;
@@ -687,7 +691,7 @@ body {
 /* GRID DE MÃ“DULOS */
 .modules-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: 25px;
 }
 
@@ -914,7 +918,7 @@ tr.row-alerta:hover {
    --------------------------------- */
 .material-form {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 20px 25px;
     padding: 20px 0;
 }
@@ -1139,8 +1143,10 @@ tr.row-alerta:hover {
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.sidebar.collapsible-sidebar:hover {
-    width: 280px;
+@media (min-width: 1025px) {
+    .sidebar.collapsible-sidebar:hover {
+        width: 350px;
+    }
 }
 
 .sidebar-header {
@@ -1163,9 +1169,11 @@ tr.row-alerta:hover {
     transition: opacity 0.2s;
     transition-delay: 0s;
 }
-.sidebar.collapsible-sidebar:hover .sidebar-header-text {
-    opacity: 1;
-    transition-delay: 0.15s;
+@media (min-width: 1025px) {
+    .sidebar.collapsible-sidebar:hover .sidebar-header-text {
+        opacity: 1;
+        transition-delay: 0.15s;
+    }
 }
 
 .sidebar-nav {
@@ -1196,9 +1204,11 @@ tr.row-alerta:hover {
     opacity: 0;
     transition: opacity 0.2s;
 }
-.sidebar.collapsible-sidebar:hover .nav-link span {
-    opacity: 1;
-    transition-delay: 0.1s;
+@media (min-width: 1025px) {
+    .sidebar.collapsible-sidebar:hover .nav-link span {
+        opacity: 1;
+        transition-delay: 0.1s;
+    }
 }
 
 /* Sidebar Hover Fixes for Submenus */
@@ -1235,8 +1245,10 @@ tr.row-alerta:hover {
     opacity: 0;
     transition: opacity 0.2s;
 }
-.sidebar.collapsible-sidebar:hover .logout-text {
-    opacity: 1;
+@media (min-width: 1025px) {
+    .sidebar.collapsible-sidebar:hover .logout-text {
+        opacity: 1;
+    }
 }
 
 /* GLOBAL HEADER */
@@ -1331,10 +1343,11 @@ tr.row-alerta:hover {
     padding-right: 40px !important; /* Mismo espacio a la derecha */
 }
 
-.sidebar.collapsible-sidebar:hover { 
-    width: max-content !important; 
-    min-width: 280px; 
-    padding-right: 20px;
+@media (min-width: 1025px) {
+    .sidebar.collapsible-sidebar:hover { 
+        width: 350px !important; 
+        padding-right: 20px;
+    }
 }
 /* Asegurar sombreado del menu principal al estar en el submenu */
 .sidebar .nav-item.has-sub.active > .nav-link {

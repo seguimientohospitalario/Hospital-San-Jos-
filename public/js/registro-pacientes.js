@@ -139,7 +139,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 filterServicio.style.color = "#94a3b8";
             }
         } catch (error) {
-            console.error('Error cargando servicios:', error.message);
         }
     };
 
@@ -188,7 +187,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             renderTable(data, startRange);
             renderPagination();
         } catch (error) {
-            console.error('Error cargando pacientes:', error.message);
         } finally {
             loadingIndicator.style.display = 'none';
             tableElement.style.display = 'table';
@@ -235,9 +233,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <button class="action-btn-edit local-edit-btn" data-id="${item.id}" title="Editar Paciente">
                             <i class="fa-solid fa-pen"></i>
                         </button>
-                        <button class="action-btn-edit local-rpa-btn" data-dni="${item.dni}" title="${condClass === 'cond-fallecido' ? 'Bloqueado por estado fallecido' : 'Ejecutar Consulta RPA'}" style="color: ${condClass === 'cond-fallecido' ? '#94a3b8' : '#3b82f6'}; cursor: ${condClass === 'cond-fallecido' ? 'not-allowed' : 'pointer'};" ${condClass === 'cond-fallecido' ? 'disabled' : ''}>
-                            <i class="fa-solid fa-clipboard-check"></i>
-                        </button>
                     </div>
                 </td>
             `;
@@ -253,15 +248,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         });
 
-        // Add RPA Hooks
-        document.querySelectorAll('.local-rpa-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const dni = e.currentTarget.getAttribute('data-dni');
-                if (dni) {
-                    window.location.href = `../consultas/consulta-rapida.html?autoRpaDni=${dni}`;
-                }
-            });
-        });
+
     };
 
     const openEditForm = (p) => {
@@ -522,7 +509,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if(window.showSystemTooltip) window.showSystemTooltip(result.error || 'No se encontró fecha para este DNI', true);
             }
         } catch (err) {
-            console.error('Error Worker:', err);
             if(window.showSystemTooltip) window.showSystemTooltip('Error de conexión con el servicio', true);
         } finally {
             btnObtenerFnac.disabled = false;
@@ -663,7 +649,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             if(window.showSystemTooltip) window.showSystemTooltip(msgSuccess);
 
         } catch (err) {
-            console.error(err);
             if(window.showSystemTooltip) window.showSystemTooltip(err.message || 'Error al guardar paciente', true);
         } finally {
             // Restaurar botón

@@ -1,5 +1,5 @@
 /**
- * Gestión de Administradores — Hospital San José
+ * GestiÃ³n de Administradores â€” Hospital San JosÃ©
  * CRUD de usuarios con rol = Administrador (id_rol=2).
  * Acceso: Solo Desarrollador.
  */
@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const rolNombre = sessionStorage.getItem('userRole') || '';
     if (rolNombre !== 'Desarrollador') {
-        alert('Solo el rol Desarrollador puede acceder a este módulo.');
+        alert('Solo el rol Desarrollador puede acceder a este mÃ³dulo.');
         window.location.href = '../../menu.html';
         return;
     }
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             tableContainer.style.display = 'block';
             recalcAndRender();
         } catch (err) {
-            console.error('Error fetching admins:', err);
+
             loadingEl.style.display = 'none';
             showToast('Error al cargar administradores', 'error');
         }
@@ -167,13 +167,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                     ${toggleBtn}
                 `;
             } else {
-                actionsHTML = '<span style="color:#cbd5e1; font-size:12px;">—</span>';
+                actionsHTML = '<span style="color:#cbd5e1; font-size:12px;">â€”</span>';
             }
 
             tr.innerHTML = `
                 <td style="font-weight:700; color:#1e293b;">${start + idx + 1}</td>
                 <td>${user.nombre_completo || 'Sin nombre'}</td>
-                <td style="color:#64748b; font-size:13px;">${user.email || '—'}</td>
+                <td style="color:#64748b; font-size:13px;">${user.email || 'â€”'}</td>
                 <td><span class="${roleBadgeClass}">${roleName.toUpperCase()}</span></td>
                 <td>${statusBadge}</td>
                 <td style="color:#64748b; font-size:13px;">${fechaStr}</td>
@@ -213,7 +213,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else if (action === 'deactivate' || action === 'activate') {
             const newStatus = action === 'activate';
             const label = newStatus ? 'activar' : 'desactivar';
-            if (!confirm(`¿Está seguro de ${label} este administrador?`)) return;
+            if (!confirm(`Â¿EstÃ¡ seguro de ${label} este administrador?`)) return;
 
             try {
                 const { error } = await supabaseClient
@@ -232,10 +232,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         modalError.classList.remove('show');
-        const nombre = inputNombre.value.trim();
+        
+        // Utilidad de sanitizaciÃ³n local
+        const escapeHTML = (str) => str.replace(/[&<>'"]/g, 
+            tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag]));
+
+        let nombre = inputNombre.value.trim();
         const username = inputUsername.value.trim();
+        const rolVal = parseInt(inputRol.value);
+
         if (!nombre) { showModalError('El nombre es obligatorio.'); return; }
         if (!username) { showModalError('El nombre de usuario es obligatorio.'); return; }
+
+        if (nombre.length > 100) { showModalError('El nombre no puede exceder 100 caracteres.'); return; }
+        if (username.length > 50) { showModalError('El nombre de usuario no puede exceder 50 caracteres.'); return; }
+
+        const usernameRegex = /^[a-zA-Z0-9_.-]+$/;
+        if (!usernameRegex.test(username)) {
+            showModalError('El nombre de usuario contiene caracteres no permitidos.');
+            return;
+        }
+
+        if (![2, 3].includes(rolVal)) {
+            showModalError('Rol invÃ¡lido seleccionado.');
+            return;
+        }
+
+        nombre = escapeHTML(nombre);
 
         btnSubmit.disabled = true;
         btnSubmitSpinner.style.display = 'inline-block';
@@ -249,7 +278,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 .maybeSingle();
 
             if (existingUser && (!editingUserId || existingUser.id_usuario !== editingUserId)) {
-                showModalError('Este nombre de usuario ya está en uso. Elige otro.');
+                showModalError('Este nombre de usuario ya estÃ¡ en uso. Elige otro.');
                 resetSubmitBtn();
                 return;
             }
@@ -264,8 +293,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             } else {
                 const email = inputEmail.value.trim();
                 const password = inputPassword.value;
-                if (!email || !password) { showModalError('Email y contraseña son obligatorios.'); resetSubmitBtn(); return; }
-                if (password.length < 6) { showModalError('La contraseña debe tener al menos 6 caracteres.'); resetSubmitBtn(); return; }
+                if (!email || !password) { showModalError('Email y contraseÃ±a son obligatorios.'); resetSubmitBtn(); return; }
+                
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (email.length > 150 || !emailRegex.test(email)) {
+                    showModalError('El correo electrÃ³nico no es vÃ¡lido o es demasiado largo.');
+                    resetSubmitBtn();
+                    return;
+                }
+                
+                if (password.length < 6 || password.length > 50) { 
+                    showModalError('La contraseÃ±a debe tener entre 6 y 50 caracteres.'); 
+                    resetSubmitBtn(); 
+                    return; 
+                }
 
                 const { data: { session: s } } = await supabaseClient.auth.getSession();
                 const response = await fetch(`${supabaseUrl}/functions/v1/create-user`, {
@@ -286,7 +327,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (!response.ok) {
                     const errMsg = result.error || 'Error al crear administrador';
                     if (errMsg.includes('already been registered')) {
-                        showModalError('Este correo electrónico ya está registrado.');
+                        showModalError('Este correo electrÃ³nico ya estÃ¡ registrado.');
                     } else {
                         showModalError(errMsg);
                     }
@@ -311,7 +352,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             closeModal();
             await fetchAdmins();
         } catch (err) {
-            console.error('Submit error:', err);
+
             showModalError('Error inesperado. Intente nuevamente.');
         }
         resetBtn();

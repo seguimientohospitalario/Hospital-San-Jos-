@@ -1,9 +1,9 @@
 /**
  * recuperar-password.js
- * Flujo de recuperación de contraseña en 3 pasos:
- *   1. Enviar código OTP al correo
- *   2. Verificar código OTP
- *   3. Establecer nueva contraseña
+ * Flujo de recuperaciÃ³n de contraseÃ±a en 3 pasos:
+ *   1. Enviar cÃ³digo OTP al correo
+ *   2. Verificar cÃ³digo OTP
+ *   3. Establecer nueva contraseÃ±a
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
             stepsIndicator.style.display = 'none';
             backLink.style.display = 'none';
 
-            // Cambiar ícono
+            // Cambiar Ã­cono
             cardIcon.className = 'fa-solid fa-circle-check';
             document.querySelector('.recovery-icon-circle').style.background =
                 'linear-gradient(135deg, #10b981, #059669)';
@@ -115,25 +115,30 @@ document.addEventListener('DOMContentLoaded', () => {
             else if (n === stepNum) dot.classList.add('active');
         });
 
-        // Actualizar ícono según paso
+        // Actualizar Ã­cono segÃºn paso
         const icons = { 1: 'fa-key', 2: 'fa-shield-halved', 3: 'fa-lock' };
         cardIcon.className = `fa-solid ${icons[stepNum]}`;
     };
 
-    // ==================== PASO 1: ENVIAR CÓDIGO ====================
+    // ==================== PASO 1: ENVIAR CÃ“DIGO ====================
     btnSendCode.addEventListener('click', async () => {
         clearMsg(msgStep1);
         const email = emailInput.value.trim();
 
         if (!email) {
-            showMsg(msgStep1, 'Por favor, ingresa tu correo electrónico.');
+            showMsg(msgStep1, 'Por favor, ingresa tu correo electrÃ³nico.');
             return;
         }
 
-        // Validar formato de email
+        // Validar formato de email y longitud
+        if (email.length > 150) {
+            showMsg(msgStep1, 'El correo electrÃ³nico es demasiado largo.');
+            return;
+        }
+
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-            showMsg(msgStep1, 'El formato del correo no es válido.');
+            showMsg(msgStep1, 'El formato del correo no es vÃ¡lido.');
             return;
         }
 
@@ -148,16 +153,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (error.message.includes('rate limit') || error.message.includes('Rate limit')) {
                     showMsg(msgStep1, 'Demasiados intentos. Espera unos minutos antes de intentar de nuevo.');
                 } else if (error.message.includes('not authorized') || error.message.includes('not found')) {
-                    showMsg(msgStep1, 'No se encontró una cuenta asociada a este correo.');
+                    showMsg(msgStep1, 'No se encontrÃ³ una cuenta asociada a este correo.');
                 } else {
-                    showMsg(msgStep1, 'Error al enviar el código. Intenta de nuevo.');
-                    console.error('Reset password error:', error.message);
+                    showMsg(msgStep1, 'Error al enviar el cÃ³digo. Intenta de nuevo.');
+
                 }
                 setLoading(btnSendCode, false);
                 return;
             }
 
-            // Éxito: avanzar al paso 2
+            // Ã‰xito: avanzar al paso 2
             recoveryEmail = email;
             displayEmail.textContent = email;
             goToStep(2);
@@ -165,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
             otpInputs[0].focus();
 
         } catch (err) {
-            console.error('Error inesperado:', err);
+
             showMsg(msgStep1, 'Error inesperado. Intenta de nuevo.');
         } finally {
             setLoading(btnSendCode, false);
@@ -187,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
         input.addEventListener('input', (e) => {
             const value = e.target.value;
 
-            // Solo números
+            // Solo nÃºmeros
             if (!/^\d$/.test(value)) {
                 e.target.value = '';
                 return;
@@ -212,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Soporte para pegar código completo
+        // Soporte para pegar cÃ³digo completo
         input.addEventListener('paste', (e) => {
             e.preventDefault();
             const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 8);
@@ -251,12 +256,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (error) {
                 if (error.message.includes('expired') || error.message.includes('Token has expired')) {
-                    showMsg(msgStep2, 'El código ha expirado. Solicita uno nuevo.');
+                    showMsg(msgStep2, 'El cÃ³digo ha expirado. Solicita uno nuevo.');
                 } else if (error.message.includes('invalid') || error.message.includes('Invalid')) {
-                    showMsg(msgStep2, 'Código incorrecto. Verifica e intenta de nuevo.');
+                    showMsg(msgStep2, 'CÃ³digo incorrecto. Verifica e intenta de nuevo.');
                 } else {
-                    showMsg(msgStep2, 'Error al verificar el código.');
-                    console.error('OTP verify error:', error.message);
+                    showMsg(msgStep2, 'Error al verificar el cÃ³digo.');
+
                 }
 
                 // Limpiar inputs OTP
@@ -269,19 +274,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Éxito: la sesión de recuperación está activa
+            // Ã‰xito: la sesiÃ³n de recuperaciÃ³n estÃ¡ activa
             if (countdownInterval) clearInterval(countdownInterval);
             goToStep(3);
             newPassword.focus();
 
         } catch (err) {
-            console.error('Error inesperado:', err);
+
             showMsg(msgStep2, 'Error inesperado. Intenta de nuevo.');
             setLoading(btnVerifyCode, false);
         }
     });
 
-    // Temporizador de reenvío
+    // Temporizador de reenvÃ­o
     const startCountdown = () => {
         let seconds = 60;
         countdown.textContent = seconds;
@@ -318,7 +323,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            showMsg(msgStep2, 'Código reenviado exitosamente.', 'success');
+            showMsg(msgStep2, 'CÃ³digo reenviado exitosamente.', 'success');
             startCountdown();
 
             // Limpiar inputs
@@ -335,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // ==================== PASO 3: NUEVA CONTRASEÑA ====================
+    // ==================== PASO 3: NUEVA CONTRASEÃ‘A ====================
 
     // Toggle de visibilidad
     const setupToggle = (toggleBtn, input) => {
@@ -351,12 +356,12 @@ document.addEventListener('DOMContentLoaded', () => {
     setupToggle(toggleNew, newPassword);
     setupToggle(toggleConfirm, confirmPassword);
 
-    // Validación en tiempo real
+    // ValidaciÃ³n en tiempo real
     const validatePasswords = () => {
         const pass = newPassword.value;
         const confirm = confirmPassword.value;
 
-        // Longitud mínima
+        // Longitud mÃ­nima
         const lengthOk = pass.length >= 6;
         reqLength.classList.toggle('valid', lengthOk);
         reqLength.querySelector('i').className = lengthOk ? 'fa-solid fa-check' : 'fa-solid fa-circle';
@@ -377,13 +382,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const pass = newPassword.value;
         const confirm = confirmPassword.value;
 
-        if (pass.length < 6) {
-            showMsg(msgStep3, 'La contraseña debe tener al menos 6 caracteres.');
+        if (pass.length < 6 || pass.length > 50) {
+            showMsg(msgStep3, 'La contraseÃ±a debe tener entre 6 y 50 caracteres.');
             return;
         }
 
         if (pass !== confirm) {
-            showMsg(msgStep3, 'Las contraseñas no coinciden.');
+            showMsg(msgStep3, 'Las contraseÃ±as no coinciden.');
             return;
         }
 
@@ -396,28 +401,28 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (error) {
                 if (error.message.includes('same')) {
-                    showMsg(msgStep3, 'La nueva contraseña no puede ser igual a la anterior.');
+                    showMsg(msgStep3, 'La nueva contraseÃ±a no puede ser igual a la anterior.');
                 } else {
-                    showMsg(msgStep3, 'Error al actualizar la contraseña. Intenta de nuevo.');
-                    console.error('Update password error:', error.message);
+                    showMsg(msgStep3, 'Error al actualizar la contraseÃ±a. Intenta de nuevo.');
+
                 }
                 setLoading(btnUpdatePassword, false);
                 return;
             }
 
-            // Cerrar sesión de recuperación
+            // Cerrar sesiÃ³n de recuperaciÃ³n
             await supabaseClient.auth.signOut();
 
-            // Mostrar éxito
+            // Mostrar Ã©xito
             goToStep('success');
 
-            // Redirigir al login después de 3 segundos
+            // Redirigir al login despuÃ©s de 3 segundos
             setTimeout(() => {
                 window.location.href = 'index.html?reset=ok';
             }, 3000);
 
         } catch (err) {
-            console.error('Error inesperado:', err);
+
             showMsg(msgStep3, 'Error inesperado. Intenta de nuevo.');
             setLoading(btnUpdatePassword, false);
         }

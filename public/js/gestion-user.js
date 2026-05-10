@@ -1,21 +1,21 @@
 /**
- * Gestión de Usuarios — Hospital San José
+ * GestiÃ³n de Usuarios â€” Hospital San JosÃ©
  * CRUD de usuarios con rol = Usuario (id_rol=3).
  * Acceso: Administrador y Desarrollador.
  */
 document.addEventListener('DOMContentLoaded', async () => {
-    // ── Auth Guard ───────────────────────────────────────────────────────────
+    // â”€â”€ Auth Guard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session) { window.location.href = '../../index.html'; return; }
 
     const rolNombre = sessionStorage.getItem('userRole') || '';
     if (rolNombre !== 'Administrador' && rolNombre !== 'Desarrollador') {
-        alert('No tiene permisos para acceder a este módulo.');
+        alert('No tiene permisos para acceder a este mÃ³dulo.');
         window.location.href = '../../menu.html';
         return;
     }
 
-    // ── DOM refs ─────────────────────────────────────────────────────────────
+    // â”€â”€ DOM refs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const tbody = document.getElementById('tbody-users');
     const loadingEl = document.getElementById('loading-users');
     const emptyEl = document.getElementById('empty-users');
@@ -43,21 +43,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     let rowsPerPage = 5;
     let editingUserId = null; // null = creating, uuid = editing
 
-    // ── Toast ────────────────────────────────────────────────────────────────
+    // â”€â”€ Toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const showToast = (msg, type = 'success') => {
         if(window.showSystemTooltip) {
             window.showSystemTooltip(msg, type === 'error');
         }
     };
 
-    // ── Password toggle ──────────────────────────────────────────────────────
+    // â”€â”€ Password toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     togglePass.addEventListener('click', () => {
         const isHidden = inputPassword.type === 'password';
         inputPassword.type = isHidden ? 'text' : 'password';
         togglePass.querySelector('i').className = isHidden ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
     });
 
-    // ── Modal logic ──────────────────────────────────────────────────────────
+    // â”€â”€ Modal logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const openModal = (mode = 'create', user = null) => {
         form.reset();
         modalError.classList.remove('show');
@@ -96,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('btn-modal-cancel').addEventListener('click', closeModal);
     modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
 
-    // ── Fetch users ──────────────────────────────────────────────────────────
+    // â”€â”€ Fetch users â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const fetchUsers = async () => {
         loadingEl.style.display = 'block';
         tableContainer.style.display = 'none';
@@ -129,13 +129,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             tableContainer.style.display = 'block';
             recalcAndRender();
         } catch (err) {
-            console.error('Error fetching users:', err);
+
             loadingEl.style.display = 'none';
             showToast('Error al cargar usuarios', 'error');
         }
     };
 
-    // ── Render table ─────────────────────────────────────────────────────────
+    // â”€â”€ Render table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const renderTable = () => {
         const start = (currentPage - 1) * rowsPerPage;
         const pageData = allUsers.slice(start, start + rowsPerPage);
@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             tr.innerHTML = `
                 <td style="font-weight:700; color:#1e293b;">${start + idx + 1}</td>
                 <td>${user.nombre_completo || 'Sin nombre'}</td>
-                <td style="color:#64748b; font-size:13px;">${user.email || '—'}</td>
+                <td style="color:#64748b; font-size:13px;">${user.email || 'â€”'}</td>
                 <td><span class="${roleBadgeClass}">${roleName.toUpperCase()}</span></td>
                 <td>${statusBadge}</td>
                 <td style="color:#64748b; font-size:13px;">${fechaStr}</td>
@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     };
 
-    // ── Recalc rows and render ───────────────────────────────────────────────
+    // â”€â”€ Recalc rows and render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const recalcAndRender = () => {
         rowsPerPage = DynamicTable.calcRowsPerPage({
             tableContainerId: 'users-table-container',
@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     DynamicTable.onResize(recalcAndRender);
 
-    // ── Handle actions ───────────────────────────────────────────────────────
+    // â”€â”€ Handle actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleAction = async (action, userId) => {
         if (action === 'edit') {
             const user = allUsers.find(u => u.id_usuario === userId);
@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         } else if (action === 'deactivate' || action === 'activate') {
             const newStatus = action === 'activate';
             const label = newStatus ? 'activar' : 'desactivar';
-            if (!confirm(`¿Está seguro de ${label} este usuario?`)) return;
+            if (!confirm(`Â¿EstÃ¡ seguro de ${label} este usuario?`)) return;
 
             try {
                 const { error } = await supabaseClient
@@ -232,15 +232,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    // ── Form submit ──────────────────────────────────────────────────────────
+    // â”€â”€ Form submit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
         modalError.classList.remove('show');
 
-        const nombre = inputNombre.value.trim();
+        // Utilidad de sanitizaciÃ³n local
+        const escapeHTML = (str) => str.replace(/[&<>'"]/g, 
+            tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag]));
+
+        let nombre = inputNombre.value.trim();
         const username = inputUsername.value.trim();
+
         if (!nombre) { showModalError('El nombre es obligatorio.'); return; }
         if (!username) { showModalError('El nombre de usuario es obligatorio.'); return; }
+
+        // Validaciones de seguridad
+        if (nombre.length > 100) { showModalError('El nombre no puede exceder 100 caracteres.'); return; }
+        if (username.length > 50) { showModalError('El nombre de usuario no puede exceder 50 caracteres.'); return; }
+
+        const usernameRegex = /^[a-zA-Z0-9_.-]+$/;
+        if (!usernameRegex.test(username)) {
+            showModalError('El nombre de usuario contiene caracteres no permitidos.');
+            return;
+        }
+
+        nombre = escapeHTML(nombre);
 
         btnSubmit.disabled = true;
         btnSubmitSpinner.style.display = 'inline-block';
@@ -255,13 +278,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 .maybeSingle();
 
             if (existingUser && (!editingUserId || existingUser.id_usuario !== editingUserId)) {
-                showModalError('Este nombre de usuario ya está en uso. Elige otro.');
+                showModalError('Este nombre de usuario ya estÃ¡ en uso. Elige otro.');
                 resetSubmitBtn();
                 return;
             }
 
             if (editingUserId) {
-                // ── EDIT MODE ────────────────────────────────────────────
+                // â”€â”€ EDIT MODE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 const { error } = await supabaseClient
                     .from('perfiles')
                     .update({ nombre_completo: nombre, nombre_usuario: username })
@@ -270,12 +293,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (error) throw error;
                 showToast('Usuario actualizado correctamente');
             } else {
-                // ── CREATE MODE ──────────────────────────────────────────
+                // â”€â”€ CREATE MODE â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 const email = inputEmail.value.trim();
                 const password = inputPassword.value;
 
-                if (!email || !password) { showModalError('Email y contraseña son obligatorios.'); resetSubmitBtn(); return; }
-                if (password.length < 6) { showModalError('La contraseña debe tener al menos 6 caracteres.'); resetSubmitBtn(); return; }
+                if (!email || !password) { showModalError('Email y contraseÃ±a son obligatorios.'); resetSubmitBtn(); return; }
+                
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (email.length > 150 || !emailRegex.test(email)) {
+                    showModalError('El correo electrÃ³nico no es vÃ¡lido o es demasiado largo.');
+                    resetSubmitBtn();
+                    return;
+                }
+                
+                if (password.length < 6 || password.length > 50) { 
+                    showModalError('La contraseÃ±a debe tener entre 6 y 50 caracteres.'); 
+                    resetSubmitBtn(); 
+                    return; 
+                }
 
                 // Call Edge Function
                 const { data: { session: currentSession } } = await supabaseClient.auth.getSession();
@@ -297,7 +332,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (!response.ok) {
                     const errMsg = result.error || 'Error al crear usuario';
                     if (errMsg.includes('already been registered')) {
-                        showModalError('Este correo electrónico ya está registrado.');
+                        showModalError('Este correo electrÃ³nico ya estÃ¡ registrado.');
                     } else {
                         showModalError(errMsg);
                     }
@@ -305,7 +340,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return;
                 }
 
-                // Actualizar el nombre de usuario post-creación
+                // Actualizar el nombre de usuario post-creaciÃ³n
                 const { data: newUser } = await supabaseClient
                     .from('perfiles')
                     .select('id_usuario')
@@ -325,7 +360,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             closeModal();
             await fetchUsers();
         } catch (err) {
-            console.error('Submit error:', err);
+
             showModalError('Error inesperado. Intente nuevamente.');
         }
 
@@ -343,6 +378,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         btnSubmitText.style.visibility = 'visible';
     };
 
-    // ── Init ─────────────────────────────────────────────────────────────────
+    // â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     await fetchUsers();
 });

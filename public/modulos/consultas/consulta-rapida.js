@@ -355,7 +355,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             renderTable();
             saveState();
         } catch (err) {
-            console.error(err);
             showToast('Error al buscar pacientes', true);
         } finally {
             loadingIndicator.style.display = 'none';
@@ -468,7 +467,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                             fecha_validacion: ahora
                         });
                     } catch (dbErr) {
-                        console.warn('[BD] Error guardando resultado:', dbErr.message);
                     }
 
                     if (estado === 'ALERTA') {
@@ -485,7 +483,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
 
         } catch (err) {
-            console.error('RPA Error:', err);
             showToast('Error al conectar con el servicio RPA: ' + err.message, true);
         } finally {
             btnValidar.disabled = false;
@@ -601,7 +598,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             closeModal();
 
         } catch (err) {
-            console.error('Error guardando cambio:', err);
             showToast('Error al guardar el cambio de cobertura', true);
         } finally {
             modalGuardar.disabled = false;
@@ -611,28 +607,4 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     restoreState();
-
-    // ========== AUTO RPA ==========
-    const params = new URLSearchParams(window.location.search);
-    const autoRpaDni = params.get('autoRpaDni');
-    if (autoRpaDni) {
-        inputDNI.value = autoRpaDni;
-        // Limpiar la URL para evitar que se vuelva a ejecutar al recargar la página
-        window.history.replaceState({}, document.title, window.location.pathname);
-
-        await loadPacientes(); // Esperar a que busque en la base de datos
-
-        // Buscar el checkbox del DNI en la tabla recién renderizada
-        const checkbox = tbodyPacientes.querySelector(`.patient-checkbox[data-dni="${autoRpaDni}"]`);
-        if (checkbox) {
-            // Simular el clic en el checkbox para activar el botón
-            checkbox.checked = true;
-            checkbox.dispatchEvent(new Event('change'));
-
-            // Simular clic en el botón Validar con un pequeñísimo delay para que la UI se actualice
-            setTimeout(() => {
-                btnValidar.click();
-            }, 200);
-        }
-    }
 });

@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </a>
             </div>
 
-            <div class="nav-item ${currentPage.includes('seguimiento') || currentPage.includes('detalle-paciente') ? 'active' : ''}">
+            <div class="nav-item ${currentPage.includes('seguimiento') ? 'active' : ''}">
                 <a href="${bp}modulos/seguimiento/seguimiento-pacientes.html" class="nav-link">
                     <i class="fa-solid fa-bed-pulse"></i>
                     <span>Seguimiento de Pacientes</span>
@@ -110,8 +110,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         return '<span class="welcome-dark">GESTIÓN DE </span><span class="welcome-celeste">USUARIOS</span>';
                     } else if (currentPage === 'registro-pacientes.html') {
                         return '<span class="welcome-dark">REGISTRO DE </span><span class="welcome-celeste">NUEVOS PACIENTES</span>';
-                    } else if (currentPage === 'seguimiento-pacientes.html' || currentPage === 'verificacion-paciente.html' || currentPage === 'detalle-paciente.html') {
-                        return '<span class="welcome-dark">BÚSQUEDA / VERIFICACIÓN / </span><span class="welcome-celeste">ACTUALIZACIÓN</span>';
+                    } else if (currentPage === 'seguimiento-pacientes.html') {
+                        return '<span class="welcome-dark">BÚSQUEDA / </span><span class="welcome-celeste">VERIFICACIÓN</span>';
                     } else if (currentPage === 'consulta-rapida.html') {
                         return '<span class="welcome-dark">CONSULTA A WEB </span><span class="welcome-celeste">DONDE ME ATIENDO</span>';
                     } else if (currentPage === 'reportes.html') {
@@ -318,7 +318,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (nameSpan) nameSpan.textContent = fetchedName;
             }
         } catch (e) {
-            console.error(e);
         }
     };
 
