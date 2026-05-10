@@ -180,6 +180,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const seguroExtraido = getSeguroExtraido(p);
             const estadoRPA = getEstadoEfectivo(p);
             const ultimaValidacion = getUltimaValidacion(p);
+            const isFallecido = p.condicion && p.condicion.toUpperCase() === 'FALLECIDO';
 
             // Badge Seguro Declarado
             const seguroDeclarado = p.tipo_seguro || 'NO DECLARADO';
@@ -215,7 +216,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Botón de acción (solo si NO es ÉXITO)
             let accionHTML = `<span style="color:#cbd5e1; font-size:14px;">—</span>`;
-            if (seguroExtraido && estadoRPA !== 'ÉXITO' && estadoRPA !== 'EXITO') {
+            if (isFallecido) {
+                accionHTML = `<span style="color:#ef4444; font-size:12px; font-weight:bold;"><i class="fa-solid fa-lock"></i> Bloqueado</span>`;
+            } else if (seguroExtraido && estadoRPA !== 'ÉXITO' && estadoRPA !== 'EXITO') {
                 accionHTML = `<button class="btn-revalidar" data-dni="${p.dni}" title="${estadoRPA === 'ALERTA' ? 'Corregir cobertura' : 'Re-validar'}" style="background:none; border:1px solid #e2e8f0; border-radius:8px; padding:6px 10px; cursor:pointer; color:${estadoRPA === 'ALERTA' ? '#ef4444' : '#3b82f6'}; transition:all 0.2s;">
                     <i class="fa-solid fa-rotate-right"></i>
                 </button>`;
@@ -223,7 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             tr.innerHTML = `
                 <td style="text-align:center;">
-                    <input type="checkbox" class="patient-checkbox" data-dni="${p.dni}" ${selectedDNIs.includes(p.dni) ? 'checked' : ''}>
+                    <input type="checkbox" class="patient-checkbox" data-dni="${p.dni}" ${selectedDNIs.includes(p.dni) ? 'checked' : ''} ${isFallecido ? 'disabled' : ''}>
                 </td>
                 <td>${p.dni}</td>
                 <td>
@@ -394,13 +397,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         try {
             const pacientesParaValidar = selectedDNIs.map(dni => {
-                const paciente = accumulatedResults.find(p => p.dni === dni);
-                return {
-                    dni: paciente.dni,
-                    fecha_nacimiento: paciente.fecha_nacimiento || '',
-                    codigo_verificacion: paciente.codigo_verificacion || ''
-                };
-            });
+                return accumulatedResults.find(p => p.dni === dni);
+            }).filter(p => p && (!p.condicion || p.condicion.toUpperCase() !== 'FALLECIDO'))
+              .map(paciente => ({
+                  dni: paciente.dni,
+                  fecha_nacimiento: paciente.fecha_nacimiento || '',
+                  codigo_verificacion: paciente.codigo_verificacion || ''
+              }));
+              
+            if (pacientesParaValidar.length === 0) {
+                showToast('Ningún paciente válido seleccionado.', true);
+                btnValidar.disabled = false;
+                blockingOverlay.style.display = 'none';
+                hideProgresoBanner();
+                return;
+            }
 
             const response = await fetch('https://hospital-san-jos-production.up.railway.app/validate-batch', {
                 method: 'POST',

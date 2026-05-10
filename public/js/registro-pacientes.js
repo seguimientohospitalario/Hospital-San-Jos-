@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <button class="action-btn-edit local-edit-btn" data-id="${item.id}" title="Editar Paciente">
                             <i class="fa-solid fa-pen"></i>
                         </button>
-                        <button class="action-btn-edit local-rpa-btn" data-dni="${item.dni}" title="Ejecutar Consulta RPA" style="color: #3b82f6;">
+                        <button class="action-btn-edit local-rpa-btn" data-dni="${item.dni}" title="${condClass === 'cond-fallecido' ? 'Bloqueado por estado fallecido' : 'Ejecutar Consulta RPA'}" style="color: ${condClass === 'cond-fallecido' ? '#94a3b8' : '#3b82f6'}; cursor: ${condClass === 'cond-fallecido' ? 'not-allowed' : 'pointer'};" ${condClass === 'cond-fallecido' ? 'disabled' : ''}>
                             <i class="fa-solid fa-clipboard-check"></i>
                         </button>
                     </div>
@@ -308,9 +308,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         // Si falleció, NO permitir editar nada (Comparación insensible)
         const isFallecido = p.condicion && p.condicion.toUpperCase() === 'FALLECIDO';
+        form.dataset.originalCondicion = p.condicion || '';
+
         if (isFallecido) {
             btnGuardar.style.display = 'none';
-            // Crear/mostrar un mensajito si se quiere
+            if(window.showSystemTooltip) window.showSystemTooltip('Edición bloqueada: Paciente fallecido', true);
         } else {
             btnGuardar.style.display = 'flex';
             // Rehabilitar campos para edición
@@ -533,6 +535,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         viewLista.style.display = 'none';
         moduleCommands.style.display = 'none'; // Ocultar módulos operativos locales
         form.reset();
+        form.dataset.originalCondicion = '';
         document.getElementById('paciente-id').value = '';
         document.getElementById('btn-obtener-fnac').style.display = 'flex';
 
@@ -576,6 +579,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ============================================
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        const originalCondicion = form.dataset.originalCondicion || '';
+        if (originalCondicion.toUpperCase() === 'FALLECIDO') {
+            if(window.showSystemTooltip) window.showSystemTooltip('Acción denegada: No se puede editar un paciente fallecido', true);
+            return;
+        }
 
         // Validación de DNI antes de enviar
         const dniValue = document.getElementById('paciente-dni').value.trim();

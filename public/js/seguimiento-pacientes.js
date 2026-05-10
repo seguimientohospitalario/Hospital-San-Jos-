@@ -123,6 +123,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             
             const condValue = (item.condicion || '').toLowerCase();
             const condClass = condValue === 'hospitalizado' ? 'cond-hospitalizado' : (condValue === 'fallecido' ? 'cond-fallecido' : 'cond-alta');
+            const isFallecido = condValue === 'fallecido';
 
             row.innerHTML = `
                 <td>${item.dni}</td>
@@ -132,9 +133,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td>${item.servicio || '-'}</td>
                 <td><span class="condicion-badge ${condClass}">${item.condicion}</span></td>
                 <td style="text-align: center;">
+                    ${!isFallecido ? `
                     <button class="btn-module primary btn-select-patient" data-id="${item.id}" style="padding: 5px 10px; font-size: 12px;">
                         <i class="fa-solid fa-timeline"></i> Actualizar
-                    </button>
+                    </button>` : `<span style="color:#ef4444; font-size: 12px; font-weight:600;"><i class="fa-solid fa-lock"></i> Bloqueado</span>`}
                 </td>
             `;
 
@@ -144,10 +146,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
 
-            row.querySelector('.btn-select-patient').addEventListener('click', (e) => {
-                e.stopPropagation();
-                openTimeline(item);
-            });
+            const btn = row.querySelector('.btn-select-patient');
+            if (btn) {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openTimeline(item);
+                });
+            }
 
             tbodyPacientes.appendChild(row);
         });
@@ -273,6 +278,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     eventForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        if (selectedPatient && selectedPatient.condicion && selectedPatient.condicion.toUpperCase() === 'FALLECIDO') {
+            showToast('Acción denegada: No se pueden registrar eventos a un paciente fallecido.', true);
+            return;
+        }
+
         btnRegistrar.disabled = true;
         registrarSpinner.style.display = 'inline-block';
         registrarText.textContent = 'Registrando...';
