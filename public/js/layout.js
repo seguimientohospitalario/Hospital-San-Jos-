@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     const isAdminMode = rolNombre === 'Desarrollador'; 
     const isHighAccess = rolNombre === 'Desarrollador' || rolNombre === 'Administrador';
+    const isDetallePage = currentPage === 'detalle-paciente.html';
 
     const bp = window.location.pathname.includes('/modulos/') ? '../../' : '';
 
@@ -56,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 </a>
             </div>
 
-            <div class="nav-item ${currentPage.includes('seguimiento') ? 'active' : ''}">
+            <div class="nav-item ${currentPage.includes('seguimiento') || currentPage === 'detalle-paciente.html' ? 'active' : ''}">
                 <a href="${bp}modulos/seguimiento/seguimiento-pacientes.html" class="nav-link">
                     <i class="fa-solid fa-bed-pulse"></i>
                     <span>Seguimiento de Pacientes</span>
@@ -95,11 +96,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const userName = sessionStorage.getItem('userName') || '';
 
     // Cabecera Global Uniforme para TODAS las vistas
+    const volverBtn = isDetallePage
+        ? `<button type="button" id="global-volver-btn" title="Volver" style="margin-right: 8px;">
+                <i class="fa-solid fa-arrow-left"></i>
+           </button>`
+        : '';
+
     let headerHTML = `
         <div class="header-left">
             <button type="button" id="sidebar-toggle-btn" class="sidebar-toggle-btn" aria-label="Abrir menú" aria-expanded="false" title="Menú">
                 <i class="fa-solid fa-bars"></i>
             </button>
+            ${volverBtn}
             <h1 class="welcome-text">
                 ${(() => {
                     if (currentPage === 'menu.html') {
@@ -112,6 +120,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         return '<span class="welcome-dark">REGISTRO DE </span><span class="welcome-celeste">NUEVOS PACIENTES</span>';
                     } else if (currentPage === 'seguimiento-pacientes.html') {
                         return '<span class="welcome-dark">BÚSQUEDA / </span><span class="welcome-celeste">VERIFICACIÓN</span>';
+                    } else if (currentPage === 'detalle-paciente.html') {
+                        return '<span class="welcome-dark">BÚSQUEDA / VERIFICACIÓN / </span><span class="welcome-celeste">ACTUALIZACIÓN</span>';
                     } else if (currentPage === 'consulta-rapida.html') {
                         return '<span class="welcome-dark">CONSULTA A WEB </span><span class="welcome-celeste">DONDE ME ATIENDO</span>';
                     } else if (currentPage === 'reportes.html') {
@@ -288,6 +298,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     setupLogout('global-logout-btn');
     setupLogout('sidebar-logout-btn');
+
+    const volverBtnEl = document.getElementById('global-volver-btn');
+    if (volverBtnEl) {
+        volverBtnEl.addEventListener('click', () => {
+            window.location.href = 'seguimiento-pacientes.html';
+        });
+    }
 
     const loadGlobalRole = async () => {
         const roleSpan = document.getElementById('global-user-role');

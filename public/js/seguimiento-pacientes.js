@@ -91,6 +91,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         items.forEach(item => {
             const row = document.createElement('tr');
+            row.style.cursor = 'pointer';
             
             const condValue = (item.condicion || '').toLowerCase();
             const condClass = condValue === 'hospitalizado' ? 'cond-hospitalizado' : (condValue === 'fallecido' ? 'cond-fallecido' : 'cond-alta');
@@ -104,6 +105,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td>${item.servicio || '-'}</td>
                 <td><span class="condicion-badge ${condClass}">${item.condicion}</span></td>
             `;
+
+            row.addEventListener('click', () => {
+                window.location.href = `detalle-paciente.html?id=${item.id}`;
+            });
 
             tbodyPacientes.appendChild(row);
         });

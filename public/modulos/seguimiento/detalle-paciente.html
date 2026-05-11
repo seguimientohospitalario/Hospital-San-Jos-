@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalle del Paciente - Hospital San José</title>
+    <link rel="stylesheet" href="../../css/styles.css">
+    <link rel="stylesheet" href="../../css/registro-pacientes.css">
+    <link rel="stylesheet" href="../../css/detalle-paciente.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <div class="main-wrapper">
+        <main class="page-content" id="page-content">
+
+            <!-- Tarjeta de datos del paciente -->
+            <div class="patient-card" id="patient-card">
+                <div class="patient-card-body">
+                    <div class="patient-avatar">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="patient-info">
+                        <h2 class="patient-name" id="p-nombre-completo">—</h2>
+                        <div class="patient-meta">
+                            <div class="meta-item">
+                                <span class="meta-label">DNI</span>
+                                <span class="meta-value" id="p-dni">—</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Tipo Seguro</span>
+                                <span class="meta-value seguro-badge" id="p-seguro">—</span>
+                            </div>
+                            <div class="meta-item">
+                                <span class="meta-label">Servicio</span>
+                                <span class="meta-value" id="p-servicio">—</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+    <!-- Calendario dinámico -->
+    <div class="calendar-section">
+        <div class="cal-filters">
+            <div class="filter-group">
+                <label for="filter-month">Mes</label>
+                <select id="filter-month" class="filter-select"></select>
+            </div>
+            <div class="filter-group">
+                <label for="filter-year">Año</label>
+                <select id="filter-year" class="filter-select"></select>
+            </div>
+            <button class="btn-module btn-clear-hover" id="btn-clear-filters" style="padding: 6px 14px; background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; white-space: nowrap;">Limpiar Filtro</button>
+        </div>
+        <div class="calendar-header">
+            <button class="cal-nav-btn" id="cal-prev" title="Mes anterior">
+                <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <div class="cal-title" id="cal-title">—</div>
+            <button class="cal-nav-btn" id="cal-next" title="Mes siguiente">
+                <i class="fa-solid fa-chevron-right"></i>
+            </button>
+        </div>
+        <div class="cal-weekdays">
+            <span>D</span><span>L</span><span>M</span><span>MI</span>
+            <span>J</span><span>V</span><span>S</span>
+        </div>
+        <div class="cal-days-grid" id="cal-days-grid"></div>
+    </div>
+
+        </main>
+    </div>
+
+    <script src="../../js/supabase-config.js"></script>
+    <script src="../../js/layout.js"></script>
+    <script src="../../js/detalle-paciente.js"></script>
+</body>
+</html>
