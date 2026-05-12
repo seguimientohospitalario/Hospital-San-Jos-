@@ -14,60 +14,262 @@
     <div class="main-wrapper">
         <main class="page-content" id="page-content">
 
-            <!-- Tarjeta de datos del paciente -->
-            <div class="patient-card" id="patient-card">
-                <div class="patient-card-body">
-                    <div class="patient-avatar">
-                        <i class="fa-solid fa-user"></i>
+            <!-- FILA SUPERIOR: Tarjeta paciente + Indicadores -->
+            <div class="detalle-top-row">
+                <div class="patient-card" id="patient-card">
+                    <div class="patient-card-body">
+                        <div class="patient-avatar">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div class="patient-info">
+                            <h2 class="patient-name" id="p-nombre-completo">—</h2>
+                        </div>
                     </div>
-                    <div class="patient-info">
-                        <h2 class="patient-name" id="p-nombre-completo">—</h2>
-                        <div class="patient-meta">
-                            <div class="meta-item">
-                                <span class="meta-label">DNI</span>
-                                <span class="meta-value" id="p-dni">—</span>
-                            </div>
-                            <div class="meta-item">
-                                <span class="meta-label">Tipo Seguro</span>
-                                <span class="meta-value seguro-badge" id="p-seguro">—</span>
-                            </div>
-                            <div class="meta-item">
-                                <span class="meta-label">Servicio</span>
-                                <span class="meta-value" id="p-servicio">—</span>
-                            </div>
+                </div>
+                <div class="stat-cards-row">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-purple"><i class="fa-solid fa-rotate"></i></div>
+                        <div class="stat-body">
+                            <span class="stat-value" id="stat-ingresos">—</span>
+                            <span class="stat-label">Veces Ingresado</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon"><i class="fa-solid fa-calendar-days"></i></div>
+                        <div class="stat-body">
+                            <span class="stat-value" id="stat-dias">—</span>
+                            <span class="stat-label">Días Hospitalizado</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-emerald"><i class="fa-solid fa-bed-pulse"></i></div>
+                        <div class="stat-body">
+                            <span class="stat-value" id="stat-servicio">—</span>
+                            <span class="stat-label">Servicio Actual</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-    <!-- Calendario dinámico -->
-    <div class="calendar-section">
-        <div class="cal-filters">
-            <div class="filter-group">
-                <label for="filter-month">Mes</label>
-                <select id="filter-month" class="filter-select"></select>
+            <!-- FILA PRINCIPAL: Calendario + Tarjeta de Eventos -->
+            <div class="detalle-main-row">
+
+                <!-- CALENDARIO -->
+                <div class="calendar-section">
+                    <div class="cal-filters">
+                        <div class="filter-group">
+                            <label for="filter-month">Mes</label>
+                            <select id="filter-month" class="filter-select"></select>
+                        </div>
+                        <div class="filter-group">
+                            <label for="filter-year">Año</label>
+                            <select id="filter-year" class="filter-select"></select>
+                        </div>
+                        <button class="btn-module btn-clear-hover" id="btn-clear-filters" style="padding: 6px 14px; background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; white-space: nowrap;">Limpiar Filtro</button>
+                    </div>
+                    <div class="calendar-header">
+                        <button class="cal-nav-btn" id="cal-prev" title="Mes anterior">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <div class="cal-title" id="cal-title">—</div>
+                        <button class="cal-nav-btn" id="cal-next" title="Mes siguiente">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </div>
+                    <div class="cal-weekdays">
+                        <span>D</span><span>L</span><span>M</span><span>MI</span>
+                        <span>J</span><span>V</span><span>S</span>
+                    </div>
+                    <div class="cal-days-grid" id="cal-days-grid"></div>
+
+                    <!-- Popover de Fecha de Ingreso -->
+                    <div class="ingreso-popover" id="ingreso-popover" style="display:none;">
+                        <div class="ingreso-popover-content">
+                            <p class="ingreso-popover-title">Confirmar Fecha de Ingreso</p>
+                            <p class="ingreso-popover-date" id="ingreso-popover-date"></p>
+                            <div class="ingreso-time-group">
+                                <label for="ingreso-hora"><i class="fa-regular fa-clock"></i> Hora de ingreso</label>
+                                <input type="time" id="ingreso-hora" class="standard-input ingreso-time-input">
+                            </div>
+                            <div class="ingreso-popover-actions">
+                                <button class="btn-popover btn-accept" id="btn-ingreso-accept">
+                                    <i class="fa-solid fa-check"></i> Aceptar
+                                </button>
+                                <button class="btn-popover btn-reject" id="btn-ingreso-reject">
+                                    <i class="fa-solid fa-xmark"></i> Rechazar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TARJETA DE EVENTOS -->
+                <div class="events-card" id="events-card">
+
+                    <!-- Estado vacío (sin registro activo) -->
+                    <div class="events-empty" id="events-empty">
+                        <i class="fa-solid fa-calendar-plus"></i>
+                        <p>Seleccione una fecha en el calendario para crear el primer registro de hospitalización</p>
+                    </div>
+
+                    <!-- Línea de tiempo activa -->
+                    <div class="events-timeline-view" id="events-timeline-view" style="display:none;">
+                        <div class="events-header">
+                            <div class="events-header-left">
+                                <button class="btn-folder-back" id="btn-timeline-back">
+                                    <i class="fa-solid fa-arrow-left"></i> Volver
+                                </button>
+                                <h3 class="events-title" id="events-title">Registro de Hospitalización</h3>
+                            </div>
+                            <div class="events-header-right">
+                                <span class="events-registro-badge" id="events-registro-badge"></span>
+                                <span class="condicion-badge" id="condicion-badge"></span>
+                            </div>
+                        </div>
+                        <div class="timeline-container" id="timeline-container"></div>
+
+                        <!-- Popover registro de eventos -->
+                        <div class="event-register-popover" id="event-register-popover" style="display:none;">
+                            <div class="event-register-header">
+                                <span class="event-register-date" id="event-register-date"></span>
+                                <button class="event-register-close" id="event-register-close">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                            <div class="event-register-body">
+                                <div class="input-stacked">
+                                    <label>Tipo de Evento</label>
+                                    <div class="standard-select-wrapper">
+                                        <select id="event-tipo" class="standard-input">
+                                            <option value="" disabled selected hidden>Seleccione evento</option>
+                                            <option value="Cambio Cobertura">Cambio de Cobertura</option>
+                                            <option value="Cambio de Servicio">Cambio de Servicio</option>
+                                            <option value="Alta">Alta</option>
+                                            <option value="Fallecido">Fallecido</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <!-- Campos dinámicos -->
+                                <div class="input-stacked" id="group-nuevo-seguro" style="display:none;">
+                                    <label>Nuevo Tipo de Seguro</label>
+                                    <div class="standard-select-wrapper">
+                                        <select id="event-nuevo-seguro" class="standard-input">
+                                            <option value="" disabled selected hidden>Seleccione</option>
+                                            <option value="EsSalud">EsSalud</option>
+                                            <option value="SIS">SIS</option>
+                                            <option value="Saludpol">Saludpol</option>
+                                            <option value="SOAT">SOAT</option>
+                                            <option value="Privado">Privado</option>
+                                            <option value="Otros">Otros tipos</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="input-stacked" id="group-seguro-otros" style="display:none;">
+                                    <label>Especificar Seguro</label>
+                                    <input type="text" id="event-seguro-otros" class="standard-input" placeholder="Ingrese nombre del seguro">
+                                </div>
+
+                                <div class="input-stacked" id="group-nuevo-servicio" style="display:none;">
+                                    <label>Nuevo Servicio</label>
+                                    <div class="standard-select-wrapper">
+                                        <select id="event-nuevo-servicio" class="standard-input">
+                                            <option value="" disabled selected hidden>Seleccione Servicio</option>
+                                            <option value="Shock trauma">Shock trauma</option>
+                                            <option value="Salud mental">Salud mental</option>
+                                            <option value="UVI">UVI</option>
+                                            <option value="Medicina">Medicina</option>
+                                            <option value="Cirugía">Cirugía</option>
+                                            <option value="Pediatría">Pediatría</option>
+                                            <option value="Neonatología">Neonatología</option>
+                                            <option value="Ginecología">Ginecología</option>
+                                            <option value="Puerperio">Puerperio</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="input-stacked" id="group-hora-alta" style="display:none;">
+                                    <label><i class="fa-regular fa-clock"></i> Hora</label>
+                                    <input type="time" id="event-hora-alta" class="standard-input">
+                                </div>
+
+                                <button class="btn-module primary" id="btn-guardar-evento" style="width:100%; margin-top:10px; padding:10px;">
+                                    <i class="fa-solid fa-save"></i>
+                                    <span id="guardar-evento-text">Guardar Evento</span>
+                                    <i id="guardar-evento-spinner" class="fa-solid fa-circle-notch fa-spin" style="display:none; margin-left:8px;"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Vista Historial de Carpetas -->
+                    <div class="events-folders-view" id="events-folders-view" style="display:none;">
+                        <div class="events-header">
+                            <h3 class="events-title">Historial de Hospitalizaciones</h3>
+                            <span class="condicion-badge" id="condicion-badge-folders"></span>
+                        </div>
+                        <div class="folders-container" id="folders-container"></div>
+                    </div>
+
+                    <!-- Vista detalle de carpeta (línea de tiempo de registro cerrado) -->
+                    <div class="events-folder-detail" id="events-folder-detail" style="display:none;">
+                        <div class="events-header">
+                            <button class="btn-folder-back" id="btn-folder-back">
+                                <i class="fa-solid fa-arrow-left"></i> Volver
+                            </button>
+                            <span class="events-registro-badge" id="folder-detail-badge"></span>
+                        </div>
+                        <div class="timeline-container" id="folder-detail-timeline"></div>
+                    </div>
+                </div>
+
             </div>
-            <div class="filter-group">
-                <label for="filter-year">Año</label>
-                <select id="filter-year" class="filter-select"></select>
+
+            <!-- FICHA DEL PACIENTE -->
+            <div class="ficha-paciente-card" id="ficha-paciente-card">
+                <div class="ficha-header">
+                    <i class="fa-solid fa-id-card"></i>
+                    <h3>Ficha del Paciente</h3>
+                </div>
+                <div class="ficha-grid" id="ficha-grid">
+                    <div class="ficha-item">
+                        <span class="ficha-label">Historia Clínica</span>
+                        <span class="ficha-value" id="ficha-hc">—</span>
+                    </div>
+                    <div class="ficha-item">
+                        <span class="ficha-label">DNI</span>
+                        <span class="ficha-value" id="ficha-dni">—</span>
+                    </div>
+                    <div class="ficha-item">
+                        <span class="ficha-label">Apellidos</span>
+                        <span class="ficha-value" id="ficha-apellidos">—</span>
+                    </div>
+                    <div class="ficha-item">
+                        <span class="ficha-label">Nombres</span>
+                        <span class="ficha-value" id="ficha-nombres">—</span>
+                    </div>
+                    <div class="ficha-item">
+                        <span class="ficha-label">Tipo de Seguro</span>
+                        <span class="ficha-value" id="ficha-seguro">—</span>
+                    </div>
+                    <div class="ficha-item">
+                        <span class="ficha-label">Servicio</span>
+                        <span class="ficha-value" id="ficha-servicio">—</span>
+                    </div>
+                    <div class="ficha-item">
+                        <span class="ficha-label">Condición</span>
+                        <span class="ficha-value" id="ficha-condicion">—</span>
+                    </div>
+                    <div class="ficha-item">
+                        <span class="ficha-label">Registrado el</span>
+                        <span class="ficha-value" id="ficha-creado-en">—</span>
+                    </div>
+                    <div class="ficha-item ficha-item-full">
+                        <span class="ficha-label">Registrado por</span>
+                        <span class="ficha-value" id="ficha-creado-por">—</span>
+                    </div>
+                </div>
             </div>
-            <button class="btn-module btn-clear-hover" id="btn-clear-filters" style="padding: 6px 14px; background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; border-radius: 6px; font-weight: 600; font-size: 12px; cursor: pointer; white-space: nowrap;">Limpiar Filtro</button>
-        </div>
-        <div class="calendar-header">
-            <button class="cal-nav-btn" id="cal-prev" title="Mes anterior">
-                <i class="fa-solid fa-chevron-left"></i>
-            </button>
-            <div class="cal-title" id="cal-title">—</div>
-            <button class="cal-nav-btn" id="cal-next" title="Mes siguiente">
-                <i class="fa-solid fa-chevron-right"></i>
-            </button>
-        </div>
-        <div class="cal-weekdays">
-            <span>D</span><span>L</span><span>M</span><span>MI</span>
-            <span>J</span><span>V</span><span>S</span>
-        </div>
-        <div class="cal-days-grid" id="cal-days-grid"></div>
-    </div>
 
         </main>
     </div>

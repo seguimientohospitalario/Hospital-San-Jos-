@@ -618,18 +618,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const { error } = await client.from('pacientes').update(payload).eq('id', objectId);
                 errorResp = error;
             } else {
-                const { data: newPatient, error } = await client.from('pacientes').insert([payload]).select().single();
+                const { error } = await client.from('pacientes').insert([payload]).select().single();
                 errorResp = error;
-
-                if (!error && newPatient && payload.condicion === 'Hospitalizado') {
-                    // Crear evento automático de Hospitalizado
-                    await client.from('historial_eventos').insert([{
-                        paciente_id: newPatient.id,
-                        tipo_evento: 'Hospitalizado',
-                        detalle: `Ingreso inicial al servicio de ${payload.servicio}`,
-                        registrado_por: userId
-                    }]);
-                }
+                // El evento 'Hospitalizado' se creará automáticamente al asignar
+                // fecha de ingreso desde el módulo detalle-paciente (trigger en BD)
             }
 
             if (errorResp) {
