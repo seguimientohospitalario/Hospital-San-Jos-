@@ -392,7 +392,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         blockingOverlay.style.display = 'flex';
 
         // Mostrar banner azul con estimado (aprox 12s por lote de 1-2)
-        showProgresoBanner(15);
+        showProgresoBanner(20);
 
         try {
             const pacientesParaValidar = selectedDNIs.map(dni => {
@@ -589,7 +589,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             saveState();
 
             if (nuevoEstado === 'ÉXITO') {
-                showToast('Cobertura actualizada correctamente ✅');
+                showToast('Cobertura actualizada correctamente');
             } else {
                 showToast('Cobertura actualizada — aún hay discrepancia', true);
             }
@@ -606,5 +606,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
+    // ========== L&#211;GICA DE AUTO-EJECUCI&#211;N DESDE SEGUIMIENTO ==========
+    const handleAutoExecute = async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const autoDNI = urlParams.get('dni');
+        const autoTrigger = urlParams.get('auto') === 'true';
+
+        if (autoDNI) {
+            inputDNI.value = autoDNI;
+            if (autoTrigger) {
+                // 1. Ejecutar b&#250;squeda
+                await loadPacientes();
+                
+                // 2. Seleccionar el registro (el b&#250;squeda ya renderiz&#243; la tabla)
+                const pac = accumulatedResults.find(p => p.dni === autoDNI);
+                if (pac && (!pac.condicion || pac.condicion.toUpperCase() !== 'FALLECIDO')) {
+                    if (!selectedDNIs.includes(autoDNI)) {
+                        selectedDNIs.push(autoDNI);
+                        updateActionsBar();
+                        renderTable(); // Re-render para marcar el checkbox visualmente
+                    }
+                    
+                    // 3. Ejecutar validaci&#243;n
+                    setTimeout(() => {
+                        btnValidar.click();
+                    }, 500); // Peque&#241;a espera para que el usuario vea la selecci&#243;n
+                }
+            }
+        }
+    };
+
     restoreState();
+    handleAutoExecute();
 });

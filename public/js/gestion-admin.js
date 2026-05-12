@@ -289,7 +289,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     .update({ nombre_completo: nombre, id_rol: parseInt(inputRol.value), nombre_usuario: username })
                     .eq('id_usuario', editingUserId);
                 if (error) throw error;
-                showToast('Administrador actualizado correctamente');
+                const label = parseInt(inputRol.value) === 2 ? 'Administrador' : 'Usuario';
+                showToast(`${label} actualizado correctamente`);
             } else {
                 const email = inputEmail.value.trim();
                 const password = inputPassword.value;
@@ -347,7 +348,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         .update({ nombre_usuario: username })
                         .eq('id_usuario', newUser.id_usuario);
                 }
-                showToast('Administrador creado exitosamente');
+                const label = parseInt(inputRol.value) === 2 ? 'Administrador' : 'Usuario';
+                showToast(`${label} creado exitosamente`);
             }
             closeModal();
             await fetchAdmins();

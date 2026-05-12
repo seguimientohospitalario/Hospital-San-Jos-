@@ -22,6 +22,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     const loadingIndicator = document.getElementById('loading-indicator');
     const tablePacientes = document.getElementById('table-pacientes');
     const toast = document.getElementById('toast');
+    
+    // Tooltip logic (Est&#225;ndar del sistema)
+    if (window.showGuideTooltip) {
+        window.showGuideTooltip(
+            'seguimiento_pacs', 
+            'Haga click en la fila de un paciente para actualizar su informaci&#243;n', 
+            5000, // 5 segundos de duraci&#243;n
+            true, // Mostrar checkbox "No volver a mostrar"
+            { oncePerSession: false } // Reaparece cada vez que se carga la p&#225;gina
+        );
+    }
 
     // State
     let currentPage = 1;
@@ -104,10 +115,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td><span class="seguro-badge">${item.tipo_seguro}</span></td>
                 <td>${item.servicio || '-'}</td>
                 <td><span class="condicion-badge ${condClass}">${item.condicion}</span></td>
+                <td style="text-align: center;">
+                    <button class="btn-table-action quick-query" title="Consulta R&#225;pida (DNI)" data-dni="${item.dni}">
+                        <i class="fa-solid fa-address-card"></i>
+                    </button>
+                </td>
             `;
 
-            row.addEventListener('click', () => {
+            row.addEventListener('click', (e) => {
+                // Si hizo clic en el botón de acción, no abrir el detalle
+                if (e.target.closest('.quick-query')) return;
                 window.location.href = `detalle-paciente.html?id=${item.id}`;
+            });
+
+            // Acción específica para el botón de Consulta Rápida
+            row.querySelector('.quick-query').addEventListener('click', (e) => {
+                e.stopPropagation();
+                const dni = e.currentTarget.dataset.dni;
+                window.location.href = `../consultas/consulta-rapida.html?dni=${dni}&auto=true`;
             });
 
             tbodyPacientes.appendChild(row);

@@ -668,4 +668,22 @@ document.addEventListener('DOMContentLoaded', async () => {
             e.target.style.color = "#1e293b";
         }
     });
+    // ============================================
+    // MANEJO DE PARÁMETROS URL (CONSULTA RÁPIDA)
+    // ============================================
+    const params = new URLSearchParams(window.location.search);
+    const dniParam = params.get('dni');
+
+    if (dniParam && dniParam.length === 8) {
+        // 1. Simular clic en "Nuevo" para abrir el formulario
+        if (btnNew) btnNew.click();
+        
+        // 2. Llenar el DNI
+        if (inputDni) inputDni.value = dniParam;
+        
+        // 3. Ejecutar automáticamente la obtención de fecha de nacimiento (Consulta Rápida)
+        setTimeout(() => {
+            if (btnObtenerFnac) btnObtenerFnac.click();
+        }, 500);
+    }
 });

@@ -418,3 +418,32 @@
     box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
 }
 
+
+/* ============================================
+   BOTONES DE ACCI&#211;N EN TABLA (Solo Icono)
+   ============================================ */
+.btn-table-action {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px; /* Un poco mas grande al ser solo icono */
+    padding: 5px;
+}
+
+.btn-table-action:hover {
+    color: #1e293b;
+    transform: scale(1.1);
+}
+
+.btn-table-action.quick-query {
+    color: #3b82f6;
+}
+
+.btn-table-action.quick-query:hover {
+    color: #2563eb;
+}

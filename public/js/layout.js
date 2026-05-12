@@ -350,7 +350,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.showGuideTooltip = (id, htmlContent, duration, showCheckbox, options = {}) => {
     const userName = sessionStorage.getItem('userName') || 'default';
-    const hideKey = `hideGuideTooltips_${userName}`;
+    const hideKey = `hideGuide_${id}_${userName}`;
     if (localStorage.getItem(hideKey) === 'true') return;
     
     const isOnce = options.oncePerSession === undefined ? true : options.oncePerSession;
@@ -406,7 +406,7 @@ window.showGuideTooltip = (id, htmlContent, duration, showCheckbox, options = {}
         const cb = tooltip.querySelector('#never-show-guide');
         if (cb && cb.checked) {
             const userName = sessionStorage.getItem('userName') || 'default';
-            const hideKey = `hideGuideTooltips_${userName}`;
+            const hideKey = `hideGuide_${id}_${userName}`;
             localStorage.setItem(hideKey, 'true');
         }
         tooltip.classList.add('guide-tooltip-exit');

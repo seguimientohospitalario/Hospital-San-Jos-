@@ -1,4 +1,15 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    // Tooltip logic (Est&#225;ndar del sistema)
+    if (window.showGuideTooltip) {
+        window.showGuideTooltip(
+            'detalle_pacs', 
+            'Elija una fecha en el calendario para iniciar', 
+            5000, // 5 segundos de duraci&#243;n
+            true, // Mostrar checkbox "No volver a mostrar"
+            { oncePerSession: false } // Reaparece cada vez que se carga la p&#225;gina
+        );
+    }
+
     const client = typeof supabaseClient !== 'undefined' ? supabaseClient : supabase;
     const { data: { session } } = await client.auth.getSession();
 
